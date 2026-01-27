@@ -17,7 +17,6 @@ import AdminProgress from "./pages/admin/Progress";
 
 import ParentDashboard from "./pages/parent/Dashboard";
 import ParentStudentDetail from "./pages/parent/StudentDetail";
-import ParentMaterialsCenter from "./pages/parent/MaterialsCenter";
 
 import { useAuth } from "./auth/authContext";
 
@@ -65,7 +64,7 @@ export default function App() {
       >
         <Route path="dashboard" element={<ParentDashboard />} />
         <Route path="students/:id" element={<ParentStudentDetail />} />
-        <Route path="materials" element={<ParentMaterialsCenter />} />
+        {/* <Route path="materials" element={<ParentMaterialsCenter />} /> */}
         <Route path="*" element={<Navigate to="/parent/dashboard" replace />} />
       </Route>
 

@@ -3,7 +3,6 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/authContext";
 import {
   LayoutDashboard,
-  BookOpen,
   LogOut,
   Menu,
   X,
@@ -107,10 +106,6 @@ const SidebarContent = ({ isMobile, onClose }: { isMobile: boolean, onClose: () 
       <nav style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         <NavLink to="/parent/dashboard" style={linkStyle} onClick={handleNavClick}>
           <LayoutDashboard size={20} /> {t("common.dashboard")}
-        </NavLink>
-
-        <NavLink to="/parent/materials" style={linkStyle} onClick={handleNavClick}>
-          <BookOpen size={20} /> {t("common.materials")}
         </NavLink>
       </nav>
 

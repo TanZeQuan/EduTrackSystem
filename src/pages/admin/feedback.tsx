@@ -169,16 +169,19 @@ export default function AdminFeedback() {
     };
 
     return (
-        <div style={{
-            padding: isMobile ? "16px" : "32px 40px",
-            maxWidth: 1200,
-            margin: "0 auto",
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            color: "#334155",
-            height: "calc(100vh - 64px)", // Full height minus header (approx)
-            display: "flex",
-            flexDirection: "column"
-        }}>
+        <div
+            style={{
+                padding: isMobile ? "12px" : "20px 24px",
+                maxWidth: 1500,          // 原本 1200，缩一点更像图
+                margin: "0 auto",
+                fontFamily:
+                    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                color: "#334155",
+                height: "calc(100vh - 64px)",
+                display: "flex",
+                flexDirection: "column",
+            }}
+        >
 
             {/* Page Header */}
             <div style={{ marginBottom: 24, flexShrink: 0 }}>
@@ -189,7 +192,7 @@ export default function AdminFeedback() {
             {/* Main Layout: Split View */}
             <div style={{
                 display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "300px 1fr",
+                gridTemplateColumns: isMobile ? "1fr" : "250px 1fr",
                 gap: 24,
                 flex: 1,
                 minHeight: 0, // Crucial for nested scrolling

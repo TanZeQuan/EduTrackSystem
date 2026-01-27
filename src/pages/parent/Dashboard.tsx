@@ -9,56 +9,55 @@ type Card = {
   unread: number;
 };
 
-// --- Styles (可以使用 CSS Modules 或 Tailwind，这里为了方便演示使用了对象样式) ---
+// --- Styles ---
 const styles = {
   container: {
-    padding: "40px 24px",
-    maxWidth: 1024,
+    // CHANGE 1: Ensure container doesn't overflow mobile screens
+    width: "100%",
+    maxWidth: "100vw", // Ensure it never exceeds viewport width
+    boxSizing: "border-box" as const, // Crucial: Includes padding in width calculation
+
+    // 2. Reduce padding on mobile (16px is standard for phones)
+    padding: "20px 16px",
     margin: "0 auto",
+
+    // 3. Prevent the whole page from scrolling sideways
+    overflowX: "hidden" as const,
+
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    color: "#334155", // Slate-700
+    color: "#334155",
   },
   header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 32,
+   display: "flex",
+    flexDirection: "column" as const, // Stack items vertically on mobile
+    marginBottom: 24,
+    gap: 8,
   },
   title: {
     fontSize: 24,
     fontWeight: 700,
-    color: "#0f172a", // Slate-900
+    color: "#0f172a",
     margin: 0,
   },
-  linkBtn: {
-    textDecoration: "none",
-    color: "#2563eb", // Blue-600
-    fontWeight: 500,
-    fontSize: 14,
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-    padding: "8px 16px",
-    borderRadius: 8,
-    backgroundColor: "#eff6ff", // Blue-50
-    transition: "all 0.2s",
-  },
+  // (Optional: If you had a button here, flexWrap in header handles it)
+
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", // 响应式网格
+    // CHANGE 3: Reduced min-width from 320px to 280px.
+    // 320px causes horizontal scrolling on many Android phones (360px width)
+    // when you account for the container padding.
+    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
     gap: 24,
   },
   card: {
-    display: "block",
-    textDecoration: "none",
+   width: "100%", // Force card to fit container
+    boxSizing: "border-box" as const, // Prevent padding from breaking layout
     backgroundColor: "#fff",
-    border: "1px solid #e2e8f0", // Slate-200
-    borderRadius: 16,
-    padding: 24,
-    transition: "transform 0.2s, box-shadow 0.2s",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-    cursor: "pointer",
-    position: "relative" as const,
+    border: "1px solid #e2e8f0",
+    borderRadius: 12,
+    padding: 16, // Reduced padding inside cards for mobile
+    marginBottom: 16,
+    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
   },
   cardHeader: {
     display: "flex",
@@ -70,13 +69,15 @@ const styles = {
     width: 48,
     height: 48,
     borderRadius: "50%",
-    backgroundColor: "#f1f5f9", // Slate-100
+    backgroundColor: "#f1f5f9",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontSize: 20,
     fontWeight: 600,
     color: "#64748b",
+    // Prevent avatar from shrinking in flex container
+    flexShrink: 0,
   },
   name: {
     fontSize: 18,
@@ -86,7 +87,7 @@ const styles = {
   },
   grade: {
     fontSize: 14,
-    color: "#64748b", // Slate-500
+    color: "#64748b",
   },
   badge: (count: number) => ({
     display: "inline-flex",
@@ -95,9 +96,11 @@ const styles = {
     borderRadius: 999,
     fontSize: 12,
     fontWeight: 600,
-    backgroundColor: count > 0 ? "#fef2f2" : "#f8fafc", // Red-50 vs Slate-50
-    color: count > 0 ? "#ef4444" : "#94a3b8", // Red-500 vs Slate-400
+    backgroundColor: count > 0 ? "#fef2f2" : "#f8fafc",
+    color: count > 0 ? "#ef4444" : "#94a3b8",
     border: `1px solid ${count > 0 ? "#fecaca" : "#e2e8f0"}`,
+    // Prevent badge from shrinking
+    whiteSpace: "nowrap" as const,
   }),
   arrow: {
     marginTop: 16,
@@ -151,12 +154,11 @@ export default function ParentDashboard() {
     };
   }, []);
 
-  // 简单的首字母提取函数
   const getInitials = (name: string) => name.charAt(0).toUpperCase();
 
   return (
     <div style={styles.container}>
-      {/* 头部区域 */}
+      {/* Header */}
       <header style={styles.header}>
         <div>
           <h2 style={styles.title}>Dashboard</h2>
@@ -164,20 +166,16 @@ export default function ParentDashboard() {
             Overview of your children's progress
           </p>
         </div>
-        <Link to="/parent/materials" style={styles.linkBtn}>
-          <span>Materials Center</span>
-          <span>→</span>
-        </Link>
       </header>
 
-      {/* 错误提示 */}
+      {/* Error Message */}
       {msg && (
         <div style={{ padding: 16, backgroundColor: "#fef2f2", color: "#b91c1c", borderRadius: 8, marginBottom: 24 }}>
           {msg}
         </div>
       )}
 
-      {/* 内容区域 */}
+      {/* Grid */}
       {loading ? (
         <div style={styles.grid}>
           {[1, 2].map((i) => (
@@ -195,7 +193,6 @@ export default function ParentDashboard() {
               key={c.student.id}
               to={`/parent/students/${c.student.id}`}
               style={styles.card}
-              // 添加简单的 Hover 效果模拟 (实际项目中建议用 CSS 类)
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-4px)";
                 e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.1)";
@@ -207,12 +204,12 @@ export default function ParentDashboard() {
             >
               <div style={styles.cardHeader}>
                 <div style={{ display: "flex", gap: 16 }}>
-                  {/* 头像 */}
+                  {/* Avatar */}
                   <div style={styles.avatar}>
                     {getInitials(c.student.name)}
                   </div>
-                  
-                  {/* 学生信息 */}
+
+                  {/* Student Info */}
                   <div>
                     <div style={styles.name}>{c.student.name}</div>
                     <div style={styles.grade}>
@@ -221,20 +218,20 @@ export default function ParentDashboard() {
                   </div>
                 </div>
 
-                {/* 未读标记 (右上角) */}
+                {/* Badge */}
                 <div style={styles.badge(c.unread)}>
-                   {c.unread > 0 ? "●" : "✓"} 
-                   <span style={{ marginLeft: 6 }}>
-                     {c.unread > 0 ? `${c.unread} New` : "All caught up"}
-                   </span>
+                  {c.unread > 0 ? "●" : "✓"}
+                  <span style={{ marginLeft: 6 }}>
+                    {c.unread > 0 ? `${c.unread} New` : "All caught up"}
+                  </span>
                 </div>
               </div>
 
-              {/* 卡片底部行动点 */}
+              {/* Action */}
               <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16, marginTop: 8 }}>
-                 <div style={styles.arrow}>
-                    View Details <span>→</span>
-                 </div>
+                <div style={styles.arrow}>
+                  View Details <span>→</span>
+                </div>
               </div>
             </Link>
           ))}

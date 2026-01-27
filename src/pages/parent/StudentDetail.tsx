@@ -3,11 +3,9 @@ import { Link, useParams } from "react-router-dom";
 import { listStudents, type Student } from "../../services/student";
 import { listAttendanceByStudent, type AttendanceRow } from "../../services/attendance";
 import { listFeedback, type FeedbackRow, markFeedbackRead } from "../../services/feedback";
-import { listMaterialsByStudent, getMaterialSignedUrl, type MaterialRow } from "../../services/materials";
 import { listProgressByStudent, type ProgressRow } from "../../services/progress";
 
 // --- 1. Responsive Hook ---
-// Detects if the screen width is less than 768px (Mobile/Tablet portrait)
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -21,16 +19,32 @@ function useIsMobile() {
 }
 
 // --- 2. Icons ---
-const IconBack = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>;
-const IconAttendance = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:"#10b981"}}><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>;
-const IconFeedback = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:"#f59e0b"}}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>;
-const IconProgress = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:"#8b5cf6"}}><path d="M18 20V10M12 20V4M6 20v-6"/></svg>;
-const IconMaterial = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:"#3b82f6"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>;
-const IconDownload = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+const IconBack = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 12H5M12 19l-7-7 7-7" />
+  </svg>
+);
+
+const IconAttendance = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#10b981" }}>
+    <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+);
+
+const IconFeedback = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#f59e0b" }}>
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+  </svg>
+);
+
+const IconProgress = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#8b5cf6" }}>
+    <path d="M18 20V10M12 20V4M6 20v-6" />
+  </svg>
+);
 
 // --- 3. Styles & Helpers ---
 const styles = {
-  // Base container (padding is handled dynamically)
   container: {
     maxWidth: 1200,
     margin: "0 auto",
@@ -55,7 +69,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: 16,
-    flexWrap: "wrap" as const, // ✅ Responsive: wraps on tiny screens
+    flexWrap: "wrap" as const,
   },
   avatar: {
     width: 48,
@@ -86,11 +100,9 @@ const styles = {
     fontSize: 12,
     fontWeight: 500,
   },
-  // Responsive Grid
   grid: {
     display: "grid",
-    // ✅ 300px ensures it fits on mobile without breaking, but expands on desktop
-    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", 
+    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
     gap: 24,
   },
   card: {
@@ -143,7 +155,6 @@ const styles = {
     const s = status.toLowerCase();
     const isPresent = s === "present" || s === "on time";
     const isLate = s.includes("late");
-    // Green for Present, Amber for Late, Red for Absent
     const color = isPresent ? "#16a34a" : isLate ? "#d97706" : "#dc2626";
     const bg = isPresent ? "#dcfce7" : isLate ? "#fef3c7" : "#fee2e2";
     return {
@@ -162,40 +173,17 @@ const styles = {
 export default function ParentStudentDetail() {
   const { id } = useParams<{ id: string }>();
   const studentId = id ?? "";
-  
-  // Responsive Hook
+
   const isMobile = useIsMobile();
 
   const [student, setStudent] = useState<Student | null>(null);
   const [attendance, setAttendance] = useState<AttendanceRow[]>([]);
   const [feedback, setFeedback] = useState<FeedbackRow[]>([]);
-  const [materials, setMaterials] = useState<MaterialRow[]>([]);
   const [progress, setProgress] = useState<ProgressRow[]>([]);
-  
+
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState<string | null>(null);
-  
-  // Fix: Type is string | null
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  // Download Handler
-  const onDownload = async (mat: MaterialRow) => {
-    if (downloadingId) return;
-    setDownloadingId(mat.id); // Start loading
-    try {
-      const url = await getMaterialSignedUrl(mat.file_path);
-      // Small delay for UX
-      setTimeout(() => {
-        window.open(url, "_blank");
-        setDownloadingId(null);
-      }, 500);
-    } catch (e: unknown) {
-      setMsg(e instanceof Error ? e.message : "Download failed");
-      setDownloadingId(null);
-    }
-  };
-
-  // Data Fetching
   useEffect(() => {
     let alive = true;
 
@@ -215,39 +203,34 @@ export default function ParentStudentDetail() {
           return;
         }
 
-        // Parallel Fetching with Error Tolerance
         const results = await Promise.allSettled([
           listAttendanceByStudent(studentId),
           listFeedback(studentId),
-          listMaterialsByStudent(studentId),
           listProgressByStudent(studentId),
         ]);
-        
+
         if (!alive) return;
 
-        const [resA, resF, resM, resP] = results;
-        
+        const [resA, resF, resP] = results;
+
         const a = resA.status === "fulfilled" ? resA.value : [];
         const f = resF.status === "fulfilled" ? resF.value : [];
-        const m = resM.status === "fulfilled" ? resM.value : [];
         const pr = resP.status === "fulfilled" ? resP.value : [];
 
         setAttendance(a);
-        setMaterials(m);
         setProgress(pr);
 
         // Auto-mark unread feedback
         const unread = f.filter((x) => !x.is_read);
         if (unread.length > 0) {
-          markFeedbackReadItems(unread); // Fire & Forget
+          markFeedbackReadItems(unread); // fire & forget
           const patched = f.map((x) =>
-             x.is_read ? x : { ...x, is_read: true, read_at: new Date().toISOString() }
+            x.is_read ? x : { ...x, is_read: true, read_at: new Date().toISOString() }
           );
           setFeedback(patched);
         } else {
           setFeedback(f);
         }
-
       } catch (e: unknown) {
         if (!alive) return;
         setMsg(e instanceof Error ? e.message : "Failed to load student data");
@@ -256,30 +239,40 @@ export default function ParentStudentDetail() {
       }
     })();
 
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [studentId]);
 
   const markFeedbackReadItems = async (items: FeedbackRow[]) => {
     await Promise.allSettled(items.map((x) => markFeedbackRead(x.id)));
   };
 
-  // --- Render ---
-
   if (loading) {
-    return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>Loading student profile...</div>;
+    return (
+      <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
+        Loading student profile...
+      </div>
+    );
   }
 
   if (!student && msg) {
-    return <div style={{ padding: 40, textAlign: "center", color: "#ef4444" }}>{msg}</div>;
+    return (
+      <div style={{ padding: 40, textAlign: "center", color: "#ef4444" }}>
+        {msg}
+      </div>
+    );
   }
 
   if (!student) return null;
 
   return (
-    <div style={{
-      ...styles.container,
-      padding: isMobile ? "20px 16px" : "32px 24px" // ✅ Responsive Padding
-    }}>
+    <div
+      style={{
+        ...styles.container,
+        padding: isMobile ? "20px 16px" : "32px 24px",
+      }}
+    >
       {/* Header */}
       <div style={styles.header}>
         <Link to="/parent/dashboard" style={styles.backLink}>
@@ -288,16 +281,21 @@ export default function ParentStudentDetail() {
         <div style={styles.titleRow}>
           <div style={styles.avatar}>{student.name.charAt(0)}</div>
           <div>
-             <h2 style={styles.studentName}>{student.name}</h2>
-             <span style={styles.gradeBadge}>Grade: {student.grade ?? "N/A"}</span>
+            <h2 style={styles.studentName}>{student.name}</h2>
+            <span style={styles.gradeBadge}>
+              Grade: {student.grade ?? "N/A"}
+            </span>
           </div>
         </div>
-        {msg && <div style={{ marginTop: 16, color: "#dc2626", fontSize: 14 }}>{msg}</div>}
+        {msg && (
+          <div style={{ marginTop: 16, color: "#dc2626", fontSize: 14 }}>
+            {msg}
+          </div>
+        )}
       </div>
 
       {/* Grid Dashboard */}
       <div style={styles.grid}>
-        
         {/* 1. Attendance */}
         <div style={styles.card}>
           <div style={styles.cardHeader}>
@@ -311,7 +309,9 @@ export default function ParentStudentDetail() {
               <div>
                 {attendance.slice(0, 50).map((row) => (
                   <div key={row.id} style={styles.listItem}>
-                    <div style={{fontSize: 14, color: "#334155"}}>{new Date(row.date).toLocaleDateString()}</div>
+                    <div style={{ fontSize: 14, color: "#334155" }}>
+                      {new Date(row.date).toLocaleDateString()}
+                    </div>
                     <span style={styles.statusBadge(row.status)}>{row.status}</span>
                   </div>
                 ))}
@@ -324,25 +324,95 @@ export default function ParentStudentDetail() {
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <IconProgress />
-            <h3 style={styles.cardTitle}>Academic Progress</h3>
+            <h3 style={styles.cardTitle}>Student Progress</h3>
           </div>
+
           <div style={styles.cardBody}>
             {progress.length === 0 ? (
               <div style={styles.emptyState}>No progress records.</div>
             ) : (
               <div>
-                {progress.map((p) => (
-                  <div key={p.id} style={{...styles.listItem, flexDirection: "column", alignItems: "flex-start", gap: 6}}>
-                    <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
-                      <b style={{fontSize: 15, color: "#1e293b"}}>{p.subject}</b>
-                      <span style={{fontSize: 14, fontWeight: 700, color: "#4f46e5"}}>
-                        {p.score ?? "-"}
-                      </span>
+                {progress
+                  .slice()
+                  .sort(
+                    (a, b) =>
+                      new Date(b.progress_date).getTime() - new Date(a.progress_date).getTime()
+                  )
+                  .map((p) => (
+                    <div
+                      key={p.id}
+                      style={{
+                        padding: "14px 20px",
+                        borderBottom: "1px solid #f1f5f9",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                      }}
+                    >
+                      {/* Header row: Title + Date */}
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: 12,
+                        }}
+                      >
+
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: "#94a3b8",
+                            fontFamily: "monospace",
+                          }}
+                        >
+                          {new Date(p.progress_date).toISOString().slice(0, 10)}
+                        </div>
+                      </div>
+
+                      {/* 科目 */}
+                      <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                        <span style={{ fontSize: 12, color: "#64748b", minWidth: 44 }}>
+                          科目：
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "#1e293b",
+                            background: "#f1f5f9",
+                            border: "1px solid #e2e8f0",
+                            padding: "2px 8px",
+                            borderRadius: 999,
+                          }}
+                        >
+                          {p.subject || "-"}
+                        </span>
+                      </div>
+
+                      {/* 课程 */}
+                      <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                        <span style={{ fontSize: 12, color: "#64748b", minWidth: 44 }}>
+                          课程：
+                        </span>
+                        <span style={{ fontSize: 13, color: "#0f172a", fontWeight: 600 }}>
+                          {p.title || "-"}
+                        </span>
+                      </div>
+
+                      {/* Note（有才显示） */}
+                      {p.note && (
+                        <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                          <span style={{ fontSize: 12, color: "#64748b", minWidth: 44 }}>
+                            Note：
+                          </span>
+                          <span style={{ fontSize: 13, color: "#475569", lineHeight: 1.5 }}>
+                            {p.note}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <div style={{ fontSize: 12, color: "#94a3b8" }}>{p.progress_date}</div>
-                    {p.note && <div style={{ fontSize: 13, color: "#475569", marginTop: 2, lineHeight: 1.4 }}>{p.note}</div>}
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </div>
@@ -360,70 +430,50 @@ export default function ParentStudentDetail() {
             ) : (
               <div>
                 {feedback.map((row) => (
-                  <div key={row.id} style={{...styles.listItem, flexDirection: "column", alignItems: "flex-start", gap: 8}}>
-                     <div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
-                        <span style={{ fontSize: 12, color: "#94a3b8" }}>
-                           {new Date(row.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-                        </span>
-                        <span style={{ fontSize: 10, color: "#cbd5e1", border: "1px solid #e2e8f0", padding: "1px 6px", borderRadius: 4 }}>
-                          {row.is_read ? "Seen" : "New"}
-                        </span>
-                     </div>
-                     <div style={{ fontSize: 14, color: "#334155", lineHeight: 1.5 }}>
-                        {row.content}
-                     </div>
+                  <div
+                    key={row.id}
+                    style={{
+                      ...styles.listItem,
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      gap: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        width: "100%",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span style={{ fontSize: 12, color: "#94a3b8" }}>
+                        {new Date(row.created_at).toLocaleString([], {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: "#cbd5e1",
+                          border: "1px solid #e2e8f0",
+                          padding: "1px 6px",
+                          borderRadius: 4,
+                        }}
+                      >
+                        {row.is_read ? "Seen" : "New"}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 14, color: "#334155", lineHeight: 1.5 }}>
+                      {row.content}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
         </div>
-
-        {/* 4. Materials */}
-        <div style={styles.card}>
-          <div style={styles.cardHeader}>
-            <IconMaterial />
-            <h3 style={styles.cardTitle}>Materials</h3>
-          </div>
-          <div style={styles.cardBody}>
-            {materials.length === 0 ? (
-              <div style={styles.emptyState}>No materials shared.</div>
-            ) : (
-              <div>
-                {materials.map((mat) => {
-                  const isDownloading = downloadingId === mat.id;
-                  return (
-                    <div key={mat.id} style={styles.listItem}>
-                      <div style={{ overflow: "hidden" }}>
-                        <div style={{ fontWeight: 500, fontSize: 14, color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {mat.title}
-                        </div>
-                        <div style={{ fontSize: 12, color: "#94a3b8" }}>
-                           {new Date(mat.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => onDownload(mat)}
-                        disabled={isDownloading}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 4,
-                          padding: "6px 10px", borderRadius: 6,
-                          border: "1px solid #e2e8f0", backgroundColor: "#fff",
-                          color: isDownloading ? "#94a3b8" : "#2563eb",
-                          fontSize: 12, cursor: isDownloading ? "default" : "pointer"
-                        }}
-                      >
-                         {isDownloading ? "..." : <IconDownload />}
-                         {isDownloading ? "Wait" : "Get"}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-
       </div>
     </div>
   );
