@@ -3,123 +3,39 @@ import { Link } from "react-router-dom";
 import { listStudents, type Student } from "../../services/student";
 import { getUnreadFeedbackCountByStudent } from "../../services/feedback";
 
+// --- Hooks: Device Detection ---
+function useDeviceType() {
+  const [deviceType, setDeviceType] = useState({
+    isMobile: window.innerWidth < 640,
+    isTablet: window.innerWidth >= 640 && window.innerWidth < 1024,
+    isDesktop: window.innerWidth >= 1024
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setDeviceType({
+        isMobile: width < 640,
+        isTablet: width >= 640 && width < 1024,
+        isDesktop: width >= 1024
+      });
+    };
+    
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return deviceType;
+}
+
 // --- Types ---
 type Card = {
   student: Student;
   unread: number;
 };
 
-// --- Styles ---
-const styles = {
-  container: {
-    // CHANGE 1: Ensure container doesn't overflow mobile screens
-    width: "100%",
-    maxWidth: "100vw", // Ensure it never exceeds viewport width
-    boxSizing: "border-box" as const, // Crucial: Includes padding in width calculation
-
-    // 2. Reduce padding on mobile (16px is standard for phones)
-    padding: "20px 16px",
-    margin: "0 auto",
-
-    // 3. Prevent the whole page from scrolling sideways
-    overflowX: "hidden" as const,
-
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    color: "#334155",
-  },
-  header: {
-   display: "flex",
-    flexDirection: "column" as const, // Stack items vertically on mobile
-    marginBottom: 24,
-    gap: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 700,
-    color: "#0f172a",
-    margin: 0,
-  },
-  // (Optional: If you had a button here, flexWrap in header handles it)
-
-  grid: {
-    display: "grid",
-    // CHANGE 3: Reduced min-width from 320px to 280px.
-    // 320px causes horizontal scrolling on many Android phones (360px width)
-    // when you account for the container padding.
-    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-    gap: 24,
-  },
-  card: {
-   width: "100%", // Force card to fit container
-    boxSizing: "border-box" as const, // Prevent padding from breaking layout
-    backgroundColor: "#fff",
-    border: "1px solid #e2e8f0",
-    borderRadius: 12,
-    padding: 16, // Reduced padding inside cards for mobile
-    marginBottom: 16,
-    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-  },
-  cardHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: "50%",
-    backgroundColor: "#f1f5f9",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 20,
-    fontWeight: 600,
-    color: "#64748b",
-    // Prevent avatar from shrinking in flex container
-    flexShrink: 0,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: 600,
-    color: "#1e293b",
-    marginBottom: 4,
-  },
-  grade: {
-    fontSize: 14,
-    color: "#64748b",
-  },
-  badge: (count: number) => ({
-    display: "inline-flex",
-    alignItems: "center",
-    padding: "4px 10px",
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 600,
-    backgroundColor: count > 0 ? "#fef2f2" : "#f8fafc",
-    color: count > 0 ? "#ef4444" : "#94a3b8",
-    border: `1px solid ${count > 0 ? "#fecaca" : "#e2e8f0"}`,
-    // Prevent badge from shrinking
-    whiteSpace: "nowrap" as const,
-  }),
-  arrow: {
-    marginTop: 16,
-    fontSize: 13,
-    color: "#2563eb",
-    fontWeight: 500,
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-  },
-  skeleton: {
-    height: 140,
-    backgroundColor: "#f8fafc",
-    borderRadius: 16,
-    animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-  },
-};
-
 export default function ParentDashboard() {
+  const { isMobile, isTablet } = useDeviceType();
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState<string | null>(null);
@@ -156,13 +72,49 @@ export default function ParentDashboard() {
 
   const getInitials = (name: string) => name.charAt(0).toUpperCase();
 
+  // Responsive styles
+  const containerPadding = isMobile ? "16px" : isTablet ? "20px 24px" : "24px 32px";
+  const headerFontSize = isMobile ? 22 : isTablet ? 24 : 28;
+  const cardPadding = isMobile ? 14 : 16;
+  const cardBorderRadius = isMobile ? 10 : 12;
+  const avatarSize = isMobile ? 42 : 48;
+  const nameFontSize = isMobile ? 16 : 18;
+  const gradeFontSize = isMobile ? 13 : 14;
+
   return (
-    <div style={styles.container}>
+    <div style={{
+      width: "100%",
+      maxWidth: "100vw",
+      boxSizing: "border-box",
+      padding: containerPadding,
+      margin: "0 auto",
+      overflowX: "hidden",
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      color: "#334155",
+    }}>
       {/* Header */}
-      <header style={styles.header}>
+      <header style={{
+        display: "flex",
+        flexDirection: "column",
+        marginBottom: isMobile ? 20 : 24,
+        gap: 8,
+      }}>
         <div>
-          <h2 style={styles.title}>Dashboard</h2>
-          <p style={{ margin: "4px 0 0", fontSize: 14, color: "#64748b" }}>
+          <h2 style={{
+            fontSize: headerFontSize,
+            fontWeight: 700,
+            color: "#0f172a",
+            margin: 0,
+            lineHeight: 1.2
+          }}>
+            Dashboard
+          </h2>
+          <p style={{
+            margin: "4px 0 0",
+            fontSize: isMobile ? 13 : 14,
+            color: "#64748b",
+            lineHeight: 1.5
+          }}>
             Overview of your children's progress
           </p>
         </div>
@@ -170,29 +122,80 @@ export default function ParentDashboard() {
 
       {/* Error Message */}
       {msg && (
-        <div style={{ padding: 16, backgroundColor: "#fef2f2", color: "#b91c1c", borderRadius: 8, marginBottom: 24 }}>
+        <div style={{
+          padding: isMobile ? 12 : 16,
+          backgroundColor: "#fef2f2",
+          color: "#b91c1c",
+          borderRadius: isMobile ? 6 : 8,
+          marginBottom: isMobile ? 16 : 24,
+          fontSize: isMobile ? 13 : 14
+        }}>
           {msg}
         </div>
       )}
 
       {/* Grid */}
       {loading ? (
-        <div style={styles.grid}>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: isMobile 
+            ? "1fr" 
+            : isTablet 
+              ? "repeat(auto-fill, minmax(280px, 1fr))" 
+              : "repeat(auto-fill, minmax(300px, 1fr))",
+          gap: isMobile ? 16 : 24,
+        }}>
           {[1, 2].map((i) => (
-            <div key={i} style={styles.skeleton} />
+            <div 
+              key={i} 
+              style={{
+                height: isMobile ? 120 : 140,
+                backgroundColor: "#f8fafc",
+                borderRadius: isMobile ? 10 : 16,
+                animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+              }} 
+            />
           ))}
         </div>
       ) : cards.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 60, color: "#94a3b8", backgroundColor: "#f8fafc", borderRadius: 16 }}>
-          <p>No students linked to your account.</p>
+        <div style={{
+          textAlign: "center",
+          padding: isMobile ? 40 : 60,
+          color: "#94a3b8",
+          backgroundColor: "#f8fafc",
+          borderRadius: isMobile ? 12 : 16,
+          fontSize: isMobile ? 13 : 14
+        }}>
+          <p style={{ margin: 0 }}>No students linked to your account.</p>
         </div>
       ) : (
-        <div style={styles.grid}>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: isMobile 
+            ? "1fr" 
+            : isTablet 
+              ? "repeat(auto-fill, minmax(280px, 1fr))" 
+              : "repeat(auto-fill, minmax(300px, 1fr))",
+          gap: isMobile ? 16 : 24,
+        }}>
           {cards.map((c) => (
             <Link
               key={c.student.id}
               to={`/parent/students/${c.student.id}`}
-              style={styles.card}
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                backgroundColor: "#fff",
+                border: "1px solid #e2e8f0",
+                borderRadius: cardBorderRadius,
+                padding: cardPadding,
+                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                textDecoration: "none",
+                color: "inherit",
+                display: "block",
+                transition: "all 0.2s ease-in-out",
+                WebkitTapHighlightColor: "transparent",
+              }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-4px)";
                 e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.1)";
@@ -201,35 +204,103 @@ export default function ParentDashboard() {
                 e.currentTarget.style.transform = "translateY(0)";
                 e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
               }}
+              onTouchStart={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 6px 12px -2px rgba(0, 0, 0, 0.08)";
+              }}
+              onTouchEnd={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
+              }}
             >
-              <div style={styles.cardHeader}>
-                <div style={{ display: "flex", gap: 16 }}>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: isMobile ? 12 : 16,
+                gap: isMobile ? 10 : 12,
+                flexWrap: isMobile ? "wrap" : "nowrap"
+              }}>
+                <div style={{
+                  display: "flex",
+                  gap: isMobile ? 12 : 16,
+                  minWidth: 0,
+                  flex: 1
+                }}>
                   {/* Avatar */}
-                  <div style={styles.avatar}>
+                  <div style={{
+                    width: avatarSize,
+                    height: avatarSize,
+                    borderRadius: "50%",
+                    backgroundColor: "#f1f5f9",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: isMobile ? 16 : 20,
+                    fontWeight: 600,
+                    color: "#64748b",
+                    flexShrink: 0,
+                  }}>
                     {getInitials(c.student.name)}
                   </div>
 
                   {/* Student Info */}
-                  <div>
-                    <div style={styles.name}>{c.student.name}</div>
-                    <div style={styles.grade}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{
+                      fontSize: nameFontSize,
+                      fontWeight: 600,
+                      color: "#1e293b",
+                      marginBottom: 4,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis"
+                    }}>
+                      {c.student.name}
+                    </div>
+                    <div style={{
+                      fontSize: gradeFontSize,
+                      color: "#64748b",
+                    }}>
                       {c.student.grade ? `${c.student.grade}` : "No Grade"}
                     </div>
                   </div>
                 </div>
 
                 {/* Badge */}
-                <div style={styles.badge(c.unread)}>
+                <div style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: isMobile ? "3px 8px" : "4px 10px",
+                  borderRadius: 999,
+                  fontSize: isMobile ? 11 : 12,
+                  fontWeight: 600,
+                  backgroundColor: c.unread > 0 ? "#fef2f2" : "#f8fafc",
+                  color: c.unread > 0 ? "#ef4444" : "#94a3b8",
+                  border: `1px solid ${c.unread > 0 ? "#fecaca" : "#e2e8f0"}`,
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}>
                   {c.unread > 0 ? "●" : "✓"}
-                  <span style={{ marginLeft: 6 }}>
+                  <span style={{ marginLeft: isMobile ? 4 : 6 }}>
                     {c.unread > 0 ? `${c.unread} New` : "All caught up"}
                   </span>
                 </div>
               </div>
 
               {/* Action */}
-              <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16, marginTop: 8 }}>
-                <div style={styles.arrow}>
+              <div style={{
+                borderTop: "1px solid #f1f5f9",
+                paddingTop: isMobile ? 12 : 16,
+                marginTop: isMobile ? 8 : 8
+              }}>
+                <div style={{
+                  fontSize: isMobile ? 12 : 13,
+                  color: "#2563eb",
+                  fontWeight: 500,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}>
                   View Details <span>→</span>
                 </div>
               </div>
@@ -237,6 +308,18 @@ export default function ParentDashboard() {
           ))}
         </div>
       )}
+
+      {/* CSS Animation */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+      `}</style>
     </div>
   );
 }

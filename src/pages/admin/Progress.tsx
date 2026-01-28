@@ -7,8 +7,34 @@ import {
   type ProgressRow,
   updateProgress,
 } from "../../services/progress";
+import { Edit2, Trash2, X, Plus } from "lucide-react";
 
-// 简单的 Badge 组件：根据日期判断是 "Planned" (未来) 还是 "Done" (已完成)
+// --- Hooks: Device Detection ---
+function useDeviceType() {
+  const [deviceType, setDeviceType] = useState({
+    isMobile: window.innerWidth < 640,
+    isTablet: window.innerWidth >= 640 && window.innerWidth < 1024,
+    isDesktop: window.innerWidth >= 1024
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setDeviceType({
+        isMobile: width < 640,
+        isTablet: width >= 640 && width < 1024,
+        isDesktop: width >= 1024
+      });
+    };
+    
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return deviceType;
+}
+
+// Badge Component
 function Badge({ isFuture }: { isFuture: boolean }) {
   const text = isFuture ? "Planned" : "Done";
   const bg = isFuture ? "#fff6e5" : "#e9f9ef";
@@ -25,6 +51,7 @@ function Badge({ isFuture }: { isFuture: boolean }) {
         border: `1px solid ${bd}`,
         color,
         fontWeight: 600,
+        whiteSpace: "nowrap"
       }}
     >
       {text}
@@ -32,30 +59,161 @@ function Badge({ isFuture }: { isFuture: boolean }) {
   );
 }
 
+// Mobile Card Component
+function MobileProgressCard({
+  row,
+  student,
+  onEdit,
+  onDelete
+}: {
+  row: ProgressRow;
+  student: Student | undefined;
+  onEdit: (row: ProgressRow) => void;
+  onDelete: (id: string) => void;
+}) {
+  const isFuture = new Date(row.progress_date).getTime() > new Date().getTime();
+
+  return (
+    <div style={{
+      padding: 16,
+      borderBottom: "1px solid #f1f5f9",
+      backgroundColor: "#fff"
+    }}>
+      {/* Header */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 12,
+        gap: 8
+      }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{
+            fontWeight: 600,
+            fontSize: 15,
+            color: "#1e293b",
+            marginBottom: 4
+          }}>
+            {student?.name ?? row.student_id}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span style={{
+              background: "#f3f4f6",
+              padding: "2px 6px",
+              borderRadius: 4,
+              fontSize: 11,
+              color: "#374151",
+              fontWeight: 500
+            }}>
+              {row.subject}
+            </span>
+            <Badge isFuture={isFuture} />
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{
+          fontSize: 13,
+          color: "#1e293b",
+          lineHeight: 1.4,
+          marginBottom: 4
+        }}>
+          {row.title || <span style={{ color: "#94a3b8" }}>No topic</span>}
+        </div>
+        {row.note && (
+          <div style={{
+            fontSize: 12,
+            color: "#64748b",
+            marginTop: 4,
+            padding: 8,
+            backgroundColor: "#f8fafc",
+            borderRadius: 6,
+            lineHeight: 1.4
+          }}>
+            Note: {row.note}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 8
+      }}>
+        <div style={{
+          fontSize: 12,
+          color: "#64748b",
+          fontFamily: "monospace"
+        }}>
+          {new Date(row.progress_date).toLocaleDateString()}
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button
+            onClick={() => onEdit(row)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: 6,
+              cursor: "pointer",
+              border: "1px solid #e2e8f0",
+              background: "#fff",
+              fontSize: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              color: "#2563eb",
+              WebkitTapHighlightColor: "transparent"
+            }}
+          >
+            <Edit2 size={14} />
+            <span>Edit</span>
+          </button>
+          <button
+            onClick={() => onDelete(row.id)}
+            style={{
+              padding: "6px",
+              borderRadius: 6,
+              cursor: "pointer",
+              border: "1px solid #fee2e2",
+              background: "#fff5f5",
+              color: "#dc2626",
+              display: "flex",
+              alignItems: "center",
+              WebkitTapHighlightColor: "transparent"
+            }}
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminLessonLog() {
+  const { isMobile, isTablet, isDesktop } = useDeviceType();
+  
   const [students, setStudents] = useState<Student[]>([]);
   const [rows, setRows] = useState<ProgressRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState<string | null>(null);
 
-  // 筛选状态
+  // Filter state
   const [qStudent, setQStudent] = useState("");
   const [qSubject, setQSubject] = useState("");
 
-  // 排序状态: 默认按 "上课日期" 倒序
-  const [sortBy, setSortBy] = useState<"progress_date" | "created_at">(
-    "progress_date"
-  );
+  // Sort state
+  const [sortBy, setSortBy] = useState<"progress_date" | "created_at">("progress_date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  // ===== Modal 状态（Create + Edit 共用）=====
+  // Modal state
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formErr, setFormErr] = useState<string | null>(null);
-
-  // 你之前有 studentSearch，但没放 input，我这里补上（更好用）
   const [studentSearch, setStudentSearch] = useState("");
-
   const [mode, setMode] = useState<"create" | "edit">("create");
   const [editingRow, setEditingRow] = useState<ProgressRow | null>(null);
 
@@ -117,7 +275,6 @@ export default function AdminLessonLog() {
     const list = rows.filter((r) => {
       const s = studentMap.get(r.student_id);
       const stuName = (s?.name ?? "").toLowerCase();
-
       const subj = (r.subject ?? "").toLowerCase();
       const topic = (r.title ?? "").toLowerCase();
 
@@ -130,7 +287,6 @@ export default function AdminLessonLog() {
     list.sort((a, b) => {
       const dateStrA = sortBy === "progress_date" ? a.progress_date : a.created_at;
       const dateStrB = sortBy === "progress_date" ? b.progress_date : b.created_at;
-
       const ta = new Date(dateStrA).getTime();
       const tb = new Date(dateStrB).getTime();
       return sortDir === "desc" ? tb - ta : ta - tb;
@@ -163,7 +319,6 @@ export default function AdminLessonLog() {
     setForm(emptyForm);
   };
 
-  // --- Add New Record (Open Modal) ---
   const onAdd = () => {
     if (students.length === 0) {
       setMsg("No students yet. Create students first.");
@@ -185,19 +340,16 @@ export default function AdminLessonLog() {
     setForm({
       ...emptyForm,
       student_id: targetStudent.id,
-      // 你也可以让 subject 自动填 qSubject（可选）
       subject: qSubject.trim() ? qSubject.trim() : "",
     });
     setOpen(true);
   };
 
-  // ✅ Edit：打开同一个 Modal，并把 row 数据塞进 form
   const onEdit = (row: ProgressRow) => {
     setMode("edit");
     setEditingRow(row);
     setFormErr(null);
     setStudentSearch("");
-
     setForm({
       student_id: row.student_id,
       subject: row.subject ?? "",
@@ -205,17 +357,14 @@ export default function AdminLessonLog() {
       progress_date: row.progress_date,
       note: row.note ?? "",
     });
-
     setOpen(true);
   };
 
-  // ✅ Create + Edit 共用一个 submit
   const onSubmit = async () => {
     setFormErr(null);
 
     if (!form.student_id) return setFormErr("Please select a student.");
     if (!form.subject.trim()) return setFormErr("Subject is required.");
-    // 你原本强制 Topic 必填；如果你想 Topic 可空，把下面一行删掉
     if (!form.title.trim()) return setFormErr("Topic/Chapter is required.");
     if (!form.progress_date) return setFormErr("Date is required.");
 
@@ -240,7 +389,6 @@ export default function AdminLessonLog() {
           score: null,
           note: form.note.trim() || null,
         } satisfies ProgressUpdate;
-
         await updateProgress(editingRow.id, patch);
       }
 
@@ -265,26 +413,51 @@ export default function AdminLessonLog() {
     }
   };
 
+  // Responsive styling
+  const containerPadding = isMobile ? "16px" : isTablet ? "20px 24px" : "24px 32px";
+  const headerFontSize = isMobile ? 16 : 18;
+  const cardBorderRadius = isMobile ? 12 : 14;
+
   return (
     <div
       style={{
         display: "grid",
-        gap: 16,
-        padding: "24px 32px", // 👈 重点：左右内缩
+        gap: isMobile ? 12 : 16,
+        padding: containerPadding,
+        maxWidth: 1400,
+        margin: "0 auto",
+        width: "100%",
+        boxSizing: "border-box"
       }}
     >
-      <div style={{ fontWeight: 800, letterSpacing: 0.5, fontSize: 18 }}>
+      <div style={{
+        fontWeight: 800,
+        letterSpacing: 0.5,
+        fontSize: headerFontSize,
+        color: "#0f172a"
+      }}>
         STUDENT PROGRESS
       </div>
 
       {/* Filter Bar */}
-      <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 16 }}>
-        <div style={{ fontWeight: 700, marginBottom: 12 }}>Filter Logs</div>
+      <div style={{
+        border: "1px solid #e2e8f0",
+        borderRadius: cardBorderRadius,
+        padding: isMobile ? 12 : 16,
+        backgroundColor: "#fff"
+      }}>
+        <div style={{
+          fontWeight: 700,
+          marginBottom: 12,
+          fontSize: isMobile ? 13 : 14
+        }}>
+          Filter Logs
+        </div>
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1.2fr 1.5fr 1fr",
-            gap: 12,
+            gridTemplateColumns: isMobile ? "1fr" : isTablet ? "1fr 1fr" : "1.2fr 1.5fr 1fr",
+            gap: isMobile ? 8 : 12,
             alignItems: "center",
           }}
         >
@@ -292,22 +465,39 @@ export default function AdminLessonLog() {
             value={qStudent}
             onChange={(e) => setQStudent(e.target.value)}
             placeholder="Search Student..."
-            style={{ padding: 10, borderRadius: 10, border: "1px solid #ccc" }}
+            style={{
+              padding: isMobile ? 8 : 10,
+              borderRadius: isMobile ? 8 : 10,
+              border: "1px solid #cbd5e1",
+              fontSize: isMobile ? 13 : 14,
+              outline: "none",
+              WebkitTapHighlightColor: "transparent"
+            }}
           />
           <input
             value={qSubject}
             onChange={(e) => setQSubject(e.target.value)}
             placeholder="Search Subject or Topic..."
-            style={{ padding: 10, borderRadius: 10, border: "1px solid #ccc" }}
+            style={{
+              padding: isMobile ? 8 : 10,
+              borderRadius: isMobile ? 8 : 10,
+              border: "1px solid #cbd5e1",
+              fontSize: isMobile ? 13 : 14,
+              outline: "none",
+              WebkitTapHighlightColor: "transparent"
+            }}
           />
           <button
             onClick={onReset}
             style={{
-              padding: "10px",
-              borderRadius: 10,
+              padding: isMobile ? 8 : 10,
+              borderRadius: isMobile ? 8 : 10,
               cursor: "pointer",
-              border: "1px solid #ccc",
+              border: "1px solid #cbd5e1",
               background: "#fff",
+              fontSize: isMobile ? 13 : 14,
+              fontWeight: 500,
+              WebkitTapHighlightColor: "transparent"
             }}
           >
             Reset
@@ -321,70 +511,125 @@ export default function AdminLessonLog() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          gap: 12,
+          flexWrap: "wrap"
         }}
       >
         <button
           onClick={onAdd}
           style={{
-            padding: "10px 16px",
-            borderRadius: 10,
+            padding: isMobile ? "8px 14px" : "10px 16px",
+            borderRadius: isMobile ? 8 : 10,
             cursor: "pointer",
             background: "#2563eb",
             color: "white",
             border: "none",
             fontWeight: 600,
+            fontSize: isMobile ? 13 : 14,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            WebkitTapHighlightColor: "transparent"
           }}
         >
-          + Record Lesson
+          <Plus size={isMobile ? 16 : 18} />
+          Record Lesson
         </button>
-        <div style={{ fontSize: 12, color: "#666" }}>
-          Sorted by:{" "}
-          <b>{sortBy === "progress_date" ? "Lesson Date" : "Created Time"}</b>
-        </div>
+        {!isMobile && (
+          <div style={{ fontSize: 12, color: "#64748b" }}>
+            Sorted by:{" "}
+            <b>{sortBy === "progress_date" ? "Lesson Date" : "Created Time"}</b>
+          </div>
+        )}
       </div>
 
-      {/* Error Msg */}
-      {msg && <div style={{ color: "#b00020", fontWeight: 600 }}>{msg}</div>}
-
-      {/* Table */}
-      <div style={{ border: "1px solid #eee", borderRadius: 14, overflow: "hidden" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1.2fr 1fr 2.2fr 1.2fr 1fr 0.8fr 1.2fr",
-            padding: "12px 12px",
-            background: "#fafafa",
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: 0.4,
-            borderBottom: "1px solid #eee",
-            color: "#555",
-          }}
-        >
-          <div>STUDENT</div>
-          <div>SUBJECT</div>
-          <div>TOPIC / CHAPTER</div>
-          <div style={{ cursor: "pointer" }} onClick={() => toggleSort("progress_date")}>
-            DATE {sortBy === "progress_date" ? (sortDir === "desc" ? "▼" : "▲") : ""}
-          </div>
-          <div>TEACHER</div>
-          <div>STATUS</div>
-          <div>ACTIONS</div>
+      {/* Error Message */}
+      {msg && (
+        <div style={{
+          color: "#dc2626",
+          fontWeight: 600,
+          fontSize: isMobile ? 13 : 14,
+          padding: isMobile ? 10 : 12,
+          backgroundColor: "#fee2e2",
+          borderRadius: isMobile ? 6 : 8
+        }}>
+          {msg}
         </div>
+      )}
 
+      {/* Table / Cards */}
+      <div style={{
+        border: "1px solid #e2e8f0",
+        borderRadius: cardBorderRadius,
+        overflow: "hidden",
+        backgroundColor: "#fff"
+      }}>
+        {/* Desktop Table Header */}
+        {isDesktop && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.2fr 1fr 2.2fr 1.2fr 1fr 0.8fr 1.2fr",
+              padding: "12px",
+              background: "#fafafa",
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: 0.4,
+              borderBottom: "1px solid #e2e8f0",
+              color: "#64748b",
+            }}
+          >
+            <div>STUDENT</div>
+            <div>SUBJECT</div>
+            <div>TOPIC / CHAPTER</div>
+            <div
+              style={{ cursor: "pointer", userSelect: "none" }}
+              onClick={() => toggleSort("progress_date")}
+            >
+              DATE {sortBy === "progress_date" ? (sortDir === "desc" ? "▼" : "▲") : ""}
+            </div>
+            <div>TEACHER</div>
+            <div>STATUS</div>
+            <div>ACTIONS</div>
+          </div>
+        )}
+
+        {/* Content */}
         {loading ? (
-          <div style={{ padding: 20, textAlign: "center", color: "#666" }}>
+          <div style={{
+            padding: isMobile ? 30 : 40,
+            textAlign: "center",
+            color: "#94a3b8",
+            fontSize: isMobile ? 13 : 14
+          }}>
             Loading records...
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: 20, textAlign: "center", opacity: 0.75 }}>
+          <div style={{
+            padding: isMobile ? 30 : 40,
+            textAlign: "center",
+            opacity: 0.75,
+            color: "#94a3b8",
+            fontSize: isMobile ? 13 : 14
+          }}>
             No lesson records found.
           </div>
+        ) : isMobile || isTablet ? (
+          // Mobile/Tablet Cards
+          filtered.map((r) => (
+            <MobileProgressCard
+              key={r.id}
+              row={r}
+              student={studentMap.get(r.student_id)}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          ))
         ) : (
+          // Desktop Table Rows
           filtered.map((r) => {
             const stu = studentMap.get(r.student_id);
-            const isFuture =
-              new Date(r.progress_date).getTime() > new Date().getTime();
+            const isFuture = new Date(r.progress_date).getTime() > new Date().getTime();
 
             return (
               <div
@@ -392,14 +637,16 @@ export default function AdminLessonLog() {
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1.2fr 1fr 2.2fr 1.2fr 1fr 0.8fr 1.2fr",
-                  padding: "12px 12px",
-                  borderTop: "1px solid #eee",
+                  padding: "12px",
+                  borderTop: "1px solid #f1f5f9",
                   alignItems: "center",
                   fontSize: 13,
                   background: "#fff",
                 }}
               >
-                <div style={{ fontWeight: 600 }}>{stu?.name ?? r.student_id}</div>
+                <div style={{ fontWeight: 600, color: "#1e293b" }}>
+                  {stu?.name ?? r.student_id}
+                </div>
 
                 <div>
                   <span
@@ -415,20 +662,20 @@ export default function AdminLessonLog() {
                   </span>
                 </div>
 
-                <div style={{ color: "#111", lineHeight: 1.4 }}>
-                  {r.title || <span style={{ color: "#ccc" }}>-</span>}
+                <div style={{ color: "#1e293b", lineHeight: 1.4 }}>
+                  {r.title || <span style={{ color: "#cbd5e1" }}>-</span>}
                   {r.note && (
-                    <div style={{ fontSize: 11, color: "#888" }}>
+                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
                       Note: {r.note}
                     </div>
                   )}
                 </div>
 
-                <div style={{ fontFamily: "monospace", fontSize: 12 }}>
+                <div style={{ fontFamily: "monospace", fontSize: 12, color: "#64748b" }}>
                   {new Date(r.progress_date).toISOString().slice(0, 10)}
                 </div>
 
-                <div style={{ fontSize: 12, color: "#666" }}>
+                <div style={{ fontSize: 12, color: "#64748b" }}>
                   {r.teacher?.full_name?.split(" ")[0] ?? "Teacher"}
                 </div>
 
@@ -443,11 +690,16 @@ export default function AdminLessonLog() {
                       padding: "4px 8px",
                       borderRadius: 6,
                       cursor: "pointer",
-                      border: "1px solid #ccc",
+                      border: "1px solid #cbd5e1",
                       background: "#fff",
                       fontSize: 11,
+                      color: "#2563eb",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4
                     }}
                   >
+                    <Edit2 size={12} />
                     Edit
                   </button>
                   <button
@@ -458,10 +710,14 @@ export default function AdminLessonLog() {
                       cursor: "pointer",
                       border: "1px solid #fee2e2",
                       background: "#fff5f5",
-                      color: "#c53030",
+                      color: "#dc2626",
                       fontSize: 11,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4
                     }}
                   >
+                    <Trash2 size={12} />
                     Del
                   </button>
                 </div>
@@ -471,7 +727,7 @@ export default function AdminLessonLog() {
         )}
       </div>
 
-      {/* ===== Modal (Create + Edit) ===== */}
+      {/* Modal */}
       {open && (
         <div
           onClick={closeModal}
@@ -488,59 +744,82 @@ export default function AdminLessonLog() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: "min(720px, 100%)",
+              width: isMobile ? "100%" : "min(720px, 90%)",
               background: "#fff",
-              borderRadius: 16,
-              border: "1px solid #eee",
+              borderRadius: isMobile ? 12 : 16,
+              border: "1px solid #e2e8f0",
               boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
               overflow: "hidden",
+              maxHeight: isMobile ? "90vh" : "none",
+              display: "flex",
+              flexDirection: "column"
             }}
           >
             {/* Header */}
             <div
               style={{
-                padding: 16,
-                borderBottom: "1px solid #eee",
+                padding: isMobile ? 12 : 16,
+                borderBottom: "1px solid #e2e8f0",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
+                flexShrink: 0
               }}
             >
-              <div style={{ fontWeight: 800, fontSize: 16 }}>
+              <div style={{
+                fontWeight: 800,
+                fontSize: isMobile ? 15 : 16,
+                color: "#0f172a"
+              }}>
                 {mode === "create" ? "Log Lesson" : "Edit Lesson"}
               </div>
               <button
                 disabled={saving}
                 onClick={closeModal}
                 style={{
-                  border: "1px solid #ddd",
+                  border: "1px solid #e2e8f0",
                   background: "#fff",
-                  borderRadius: 10,
-                  padding: "6px 10px",
+                  borderRadius: isMobile ? 6 : 8,
+                  padding: isMobile ? 6 : "6px 10px",
                   cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  WebkitTapHighlightColor: "transparent"
                 }}
               >
-                ✕
+                <X size={isMobile ? 16 : 18} />
               </button>
             </div>
 
             {/* Body */}
-            <div style={{ padding: 16, display: "grid", gap: 12 }}>
-              {/* Student search + select */}
+            <div style={{
+              padding: isMobile ? 12 : 16,
+              display: "grid",
+              gap: isMobile ? 10 : 12,
+              overflowY: "auto",
+              flex: 1
+            }}>
+              {/* Student */}
               <div style={{ display: "grid", gap: 8 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#555" }}>
+                <div style={{
+                  fontSize: isMobile ? 11 : 12,
+                  fontWeight: 700,
+                  color: "#64748b"
+                }}>
                   Student
                 </div>
-
                 <select
                   value={form.student_id}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, student_id: e.target.value }))
                   }
                   style={{
-                    padding: 10,
-                    borderRadius: 10,
-                    border: "1px solid #ccc",
+                    padding: isMobile ? 8 : 10,
+                    borderRadius: isMobile ? 8 : 10,
+                    border: "1px solid #cbd5e1",
+                    fontSize: isMobile ? 13 : 14,
+                    outline: "none",
+                    WebkitTapHighlightColor: "transparent"
                   }}
                 >
                   {students
@@ -560,13 +839,17 @@ export default function AdminLessonLog() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 12,
+                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                  gap: isMobile ? 10 : 12,
                 }}
               >
                 {/* Subject */}
                 <div style={{ display: "grid", gap: 8 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#555" }}>
+                  <div style={{
+                    fontSize: isMobile ? 11 : 12,
+                    fontWeight: 700,
+                    color: "#64748b"
+                  }}>
                     Subject
                   </div>
                   <input
@@ -576,16 +859,23 @@ export default function AdminLessonLog() {
                     }
                     placeholder="e.g. Math / BM"
                     style={{
-                      padding: 10,
-                      borderRadius: 10,
-                      border: "1px solid #ccc",
+                      padding: isMobile ? 8 : 10,
+                      borderRadius: isMobile ? 8 : 10,
+                      border: "1px solid #cbd5e1",
+                      fontSize: isMobile ? 13 : 14,
+                      outline: "none",
+                      WebkitTapHighlightColor: "transparent"
                     }}
                   />
                 </div>
 
                 {/* Date */}
                 <div style={{ display: "grid", gap: 8 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#555" }}>
+                  <div style={{
+                    fontSize: isMobile ? 11 : 12,
+                    fontWeight: 700,
+                    color: "#64748b"
+                  }}>
                     Date
                   </div>
                   <input
@@ -595,9 +885,12 @@ export default function AdminLessonLog() {
                       setForm((f) => ({ ...f, progress_date: e.target.value }))
                     }
                     style={{
-                      padding: 10,
-                      borderRadius: 10,
-                      border: "1px solid #ccc",
+                      padding: isMobile ? 8 : 10,
+                      borderRadius: isMobile ? 8 : 10,
+                      border: "1px solid #cbd5e1",
+                      fontSize: isMobile ? 13 : 14,
+                      outline: "none",
+                      WebkitTapHighlightColor: "transparent"
                     }}
                   />
                 </div>
@@ -605,7 +898,11 @@ export default function AdminLessonLog() {
 
               {/* Topic */}
               <div style={{ display: "grid", gap: 8 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#555" }}>
+                <div style={{
+                  fontSize: isMobile ? 11 : 12,
+                  fontWeight: 700,
+                  color: "#64748b"
+                }}>
                   Topic / Chapter
                 </div>
                 <input
@@ -615,16 +912,23 @@ export default function AdminLessonLog() {
                   }
                   placeholder="e.g. Bab 1.1"
                   style={{
-                    padding: 10,
-                    borderRadius: 10,
-                    border: "1px solid #ccc",
+                    padding: isMobile ? 8 : 10,
+                    borderRadius: isMobile ? 8 : 10,
+                    border: "1px solid #cbd5e1",
+                    fontSize: isMobile ? 13 : 14,
+                    outline: "none",
+                    WebkitTapHighlightColor: "transparent"
                   }}
                 />
               </div>
 
-              {/* Note (optional) */}
+              {/* Note */}
               <div style={{ display: "grid", gap: 8 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#555" }}>
+                <div style={{
+                  fontSize: isMobile ? 11 : 12,
+                  fontWeight: 700,
+                  color: "#64748b"
+                }}>
                   Note (optional)
                 </div>
                 <textarea
@@ -633,40 +937,56 @@ export default function AdminLessonLog() {
                     setForm((f) => ({ ...f, note: e.target.value }))
                   }
                   placeholder="Homework / remark..."
-                  rows={3}
+                  rows={isMobile ? 2 : 3}
                   style={{
-                    padding: 10,
-                    borderRadius: 10,
-                    border: "1px solid #ccc",
+                    padding: isMobile ? 8 : 10,
+                    borderRadius: isMobile ? 8 : 10,
+                    border: "1px solid #cbd5e1",
                     resize: "vertical",
+                    fontSize: isMobile ? 13 : 14,
+                    fontFamily: "inherit",
+                    outline: "none",
+                    WebkitTapHighlightColor: "transparent"
                   }}
                 />
               </div>
 
               {formErr && (
-                <div style={{ color: "#b00020", fontWeight: 600 }}>{formErr}</div>
+                <div style={{
+                  color: "#dc2626",
+                  fontWeight: 600,
+                  fontSize: isMobile ? 12 : 13,
+                  padding: isMobile ? 8 : 10,
+                  backgroundColor: "#fee2e2",
+                  borderRadius: isMobile ? 6 : 8
+                }}>
+                  {formErr}
+                </div>
               )}
             </div>
 
             {/* Footer */}
             <div
               style={{
-                padding: 16,
-                borderTop: "1px solid #eee",
+                padding: isMobile ? 12 : 16,
+                borderTop: "1px solid #e2e8f0",
                 display: "flex",
                 justifyContent: "flex-end",
                 gap: 10,
+                flexShrink: 0
               }}
             >
               <button
                 disabled={saving}
                 onClick={closeModal}
                 style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
+                  padding: isMobile ? "8px 12px" : "10px 14px",
+                  borderRadius: isMobile ? 8 : 10,
                   cursor: "pointer",
-                  border: "1px solid #ccc",
+                  border: "1px solid #cbd5e1",
                   background: "#fff",
+                  fontSize: isMobile ? 13 : 14,
+                  WebkitTapHighlightColor: "transparent"
                 }}
               >
                 Cancel
@@ -676,13 +996,16 @@ export default function AdminLessonLog() {
                 disabled={saving}
                 onClick={onSubmit}
                 style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
+                  padding: isMobile ? "8px 12px" : "10px 14px",
+                  borderRadius: isMobile ? 8 : 10,
                   cursor: "pointer",
                   border: "none",
                   background: "#2563eb",
                   color: "#fff",
                   fontWeight: 700,
+                  fontSize: isMobile ? 13 : 14,
+                  opacity: saving ? 0.7 : 1,
+                  WebkitTapHighlightColor: "transparent"
                 }}
               >
                 {saving ? "Saving..." : mode === "create" ? "Save" : "Update"}

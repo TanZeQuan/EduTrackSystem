@@ -1,15 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-// --- Hooks: 检测移动端 ---
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+// --- Hooks: Device Detection with Breakpoints ---
+function useDeviceType() {
+  const [deviceType, setDeviceType] = useState({
+    isMobile: window.innerWidth < 640,
+    isTablet: window.innerWidth >= 640 && window.innerWidth < 1024,
+    isDesktop: window.innerWidth >= 1024
+  });
+
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setDeviceType({
+        isMobile: width < 640,
+        isTablet: width >= 640 && width < 1024,
+        isDesktop: width >= 1024
+      });
+    };
+    
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-  return isMobile;
+
+  return deviceType;
 }
 
 // --- Icons (视觉锚点) ---
@@ -91,58 +105,73 @@ function DashboardCard(props: {
   title: string;
   desc: string;
   icon: React.ReactNode;
+  isMobile: boolean;
 }) {
   const [hover, setHover] = useState(false);
+  const [active, setActive] = useState(false);
 
   return (
     <Link
       to={props.to}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onTouchStart={() => setActive(true)}
+      onTouchEnd={() => setActive(false)}
       style={{
         textDecoration: "none",
         color: "inherit",
         backgroundColor: "#fff",
         border: "1px solid #e2e8f0",
-        borderRadius: 16,
-        padding: 24,
+        borderRadius: props.isMobile ? 12 : 16,
+        padding: props.isMobile ? 16 : 24,
         display: "flex",
         flexDirection: "column",
-        gap: 12,
+        gap: props.isMobile ? 10 : 12,
         transition: "transform 0.2s, box-shadow 0.2s, border-color 0.2s",
-        transform: hover ? "translateY(-4px)" : "none",
-        boxShadow: hover
+        transform: hover || active ? "translateY(-4px)" : "none",
+        boxShadow: hover || active
           ? "0 10px 15px -3px rgba(0,0,0,0.1)"
           : "0 1px 3px rgba(0,0,0,0.05)",
-        borderColor: hover ? "#cbd5e1" : "#e2e8f0",
+        borderColor: hover || active ? "#cbd5e1" : "#e2e8f0",
+        WebkitTapHighlightColor: "transparent",
+        cursor: "pointer",
+        minHeight: props.isMobile ? "auto" : "180px"
       }}
     >
       <div
         style={{
-          width: 48,
-          height: 48,
-          borderRadius: 12,
+          width: props.isMobile ? 42 : 48,
+          height: props.isMobile ? 42 : 48,
+          borderRadius: props.isMobile ? 10 : 12,
           backgroundColor: "#f8fafc",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          marginBottom: 4,
+          marginBottom: props.isMobile ? 2 : 4,
+          flexShrink: 0
         }}
       >
-        {props.icon}
+        <div style={{ transform: props.isMobile ? "scale(0.9)" : "scale(1)" }}>
+          {props.icon}
+        </div>
       </div>
-      <div>
+      <div style={{ flex: 1 }}>
         <b
           style={{
-            fontSize: 18,
+            fontSize: props.isMobile ? 16 : 18,
             color: "#1e293b",
             display: "block",
-            marginBottom: 6,
+            marginBottom: props.isMobile ? 4 : 6,
+            lineHeight: 1.3
           }}
         >
           {props.title}
         </b>
-        <div style={{ fontSize: 14, color: "#64748b", lineHeight: 1.5 }}>
+        <div style={{ 
+          fontSize: props.isMobile ? 13 : 14, 
+          color: "#64748b", 
+          lineHeight: 1.5 
+        }}>
           {props.desc}
         </div>
       </div>
@@ -151,47 +180,69 @@ function DashboardCard(props: {
 }
 
 export default function AdminDashboard() {
-  const isMobile = useIsMobile();
+  const { isMobile, isTablet } = useDeviceType();
 
-  const containerStyle = {
-    padding: isMobile ? "24px 16px" : "40px",
+  // Responsive styling
+  const containerStyle: React.CSSProperties = {
+    padding: isMobile ? "16px" : isTablet ? "24px" : "40px",
     maxWidth: 1200,
     margin: "0 auto",
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     color: "#334155",
+    width: "100%",
+    boxSizing: "border-box"
   };
 
-  const gridStyle = {
+  const gridStyle: React.CSSProperties = {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-    gap: 24,
-    marginTop: 32,
+    gridTemplateColumns: isMobile 
+      ? "1fr" 
+      : isTablet 
+        ? "repeat(2, 1fr)" 
+        : "repeat(auto-fill, minmax(260px, 1fr))",
+    gap: isMobile ? 16 : isTablet ? 20 : 24,
+    marginTop: isMobile ? 20 : isTablet ? 24 : 32
   };
 
-  const workflowStyle = {
-    marginTop: 40,
+  const workflowStyle: React.CSSProperties = {
+    marginTop: isMobile ? 24 : isTablet ? 32 : 40,
     backgroundColor: "#f8fafc",
     border: "1px dashed #cbd5e1",
-    borderRadius: 16,
-    padding: isMobile ? 20 : 32,
+    borderRadius: isMobile ? 12 : 16,
+    padding: isMobile ? 16 : isTablet ? 24 : 32
+  };
+
+  const workflowGridStyle: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: isMobile
+      ? "1fr"
+      : isTablet
+        ? "repeat(2, 1fr)"
+        : "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: isMobile ? 12 : 16
   };
 
   return (
     <div style={containerStyle}>
       {/* Header Section */}
-      <div style={{ marginBottom: 8 }}>
+      <div style={{ marginBottom: isMobile ? 4 : 8 }}>
         <h2
           style={{
-            fontSize: 28,
+            fontSize: isMobile ? 22 : isTablet ? 24 : 28,
             fontWeight: 800,
             color: "#0f172a",
             margin: "0 0 8px 0",
+            lineHeight: 1.2
           }}
         >
           Admin Dashboard
         </h2>
-        <p style={{ margin: 0, fontSize: 16, color: "#64748b" }}>
+        <p style={{ 
+          margin: 0, 
+          fontSize: isMobile ? 14 : 16, 
+          color: "#64748b",
+          lineHeight: 1.5
+        }}>
           Welcome back. Here is an overview of your school management tools.
         </p>
       </div>
@@ -203,42 +254,43 @@ export default function AdminDashboard() {
           title="Students"
           desc="Manage student profiles & parent links."
           icon={<IconUsers />}
+          isMobile={isMobile}
         />
         <DashboardCard
           to="/admin/attendance"
           title="Attendance"
           desc="Mark and review daily attendance."
           icon={<IconCalendar />}
+          isMobile={isMobile}
         />
         <DashboardCard
           to="/admin/feedback"
           title="Feedback"
           desc="Communicate with parents via messages."
           icon={<IconMessage />}
+          isMobile={isMobile}
         />
         <DashboardCard
           to="/admin/progress"
           title="Progress"
           desc="Track academic scores and comments."
           icon={<IconChart />}
+          isMobile={isMobile}
         />
       </div>
 
       {/* Workflow Section */}
       <div style={workflowStyle}>
-        <h3 style={{ margin: "0 0 16px 0", color: "#1e293b", fontSize: 18 }}>
+        <h3 style={{ 
+          margin: "0 0 16px 0", 
+          color: "#1e293b", 
+          fontSize: isMobile ? 16 : 18,
+          lineHeight: 1.3
+        }}>
           💡 Quick Workflow Guide
         </h3>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: isMobile
-              ? "1fr"
-              : "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: 16,
-          }}
-        >
+        <div style={workflowGridStyle}>
           {[
             { step: 1, text: "Create Students", sub: "Assign to parents" },
             { step: 2, text: "Mark Attendance", sub: "Daily routine" },
@@ -249,19 +301,20 @@ export default function AdminDashboard() {
               key={item.step}
               style={{
                 display: "flex",
-                gap: 12,
+                gap: isMobile ? 10 : 12,
                 alignItems: "flex-start",
+                padding: isMobile ? "8px 0" : "4px 0"
               }}
             >
               <div
                 style={{
-                  width: 24,
-                  height: 24,
+                  width: isMobile ? 22 : 24,
+                  height: isMobile ? 22 : 24,
                   borderRadius: "50%",
                   backgroundColor: "#e2e8f0",
                   color: "#64748b",
                   fontWeight: "bold",
-                  fontSize: 12,
+                  fontSize: isMobile ? 11 : 12,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -270,17 +323,22 @@ export default function AdminDashboard() {
               >
                 {item.step}
               </div>
-              <div>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <div
                   style={{
                     fontWeight: 600,
                     color: "#334155",
-                    fontSize: 14,
+                    fontSize: isMobile ? 13 : 14,
+                    lineHeight: 1.4
                   }}
                 >
                   {item.text}
                 </div>
-                <div style={{ fontSize: 12, color: "#94a3b8" }}>
+                <div style={{ 
+                  fontSize: isMobile ? 11 : 12, 
+                  color: "#94a3b8",
+                  lineHeight: 1.4
+                }}>
                   {item.sub}
                 </div>
               </div>
