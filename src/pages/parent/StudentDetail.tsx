@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { listStudents, type Student } from "../../services/student";
 import { listAttendanceByStudent, type AttendanceRow } from "../../services/attendance";
