@@ -16,3 +16,4 @@ export async function listParents() {
   if (error) throw error;
   return (data ?? []) as Profile[];
 }
+

@@ -20,10 +20,10 @@ export async function listProgressByStudent(studentId: string) {
     .from("progress")
     .select(`
       *,
-      teacher:profiles (
-  full_name,
-  email
-)
+      teacher:profiles!created_by (
+        full_name,
+        email
+      )
     `)
     .eq("student_id", studentId)
     .order("progress_date", { ascending: false })
@@ -76,10 +76,10 @@ export async function listProgressAll() {
     .from("progress")
     .select(`
       *,
-    teacher:profiles (
-  full_name,
-  email
-)
+      teacher:profiles!created_by (
+        full_name,
+        email
+      )
     `)
     .order("progress_date", { ascending: false })
     .order("created_at", { ascending: false });
@@ -97,7 +97,13 @@ export async function updateProgress(
     .from("progress")
     .update(patch)
     .eq("id", id)
-    .select("*")
+    .select(`
+      *,
+      teacher:profiles!created_by (
+        full_name,
+        email
+      )
+    `)
     .single();
 
   if (error) throw error;

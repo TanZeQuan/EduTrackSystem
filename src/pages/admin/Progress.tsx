@@ -7,6 +7,7 @@ import {
   type ProgressRow,
   updateProgress,
 } from "../../services/progress";
+import { supabase } from "../../services/supabase";
 import { Edit2, Trash2, X, Plus } from "lucide-react";
 
 // --- Hooks: Device Detection ---
@@ -14,7 +15,7 @@ function useDeviceType() {
   const [deviceType, setDeviceType] = useState({
     isMobile: window.innerWidth < 640,
     isTablet: window.innerWidth >= 640 && window.innerWidth < 1024,
-    isDesktop: window.innerWidth >= 1024
+    isDesktop: window.innerWidth >= 1024,
   });
 
   useEffect(() => {
@@ -23,10 +24,10 @@ function useDeviceType() {
       setDeviceType({
         isMobile: width < 640,
         isTablet: width >= 640 && width < 1024,
-        isDesktop: width >= 1024
+        isDesktop: width >= 1024,
       });
     };
-    
+
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -51,7 +52,7 @@ function Badge({ isFuture }: { isFuture: boolean }) {
         border: `1px solid ${bd}`,
         color,
         fontWeight: 600,
-        whiteSpace: "nowrap"
+        whiteSpace: "nowrap",
       }}
     >
       {text}
@@ -63,126 +64,170 @@ function Badge({ isFuture }: { isFuture: boolean }) {
 function MobileProgressCard({
   row,
   student,
+  canEdit,
   onEdit,
-  onDelete
+  onDelete,
 }: {
   row: ProgressRow;
   student: Student | undefined;
+  canEdit: boolean;
   onEdit: (row: ProgressRow) => void;
   onDelete: (id: string) => void;
 }) {
   const isFuture = new Date(row.progress_date).getTime() > new Date().getTime();
 
   return (
-    <div style={{
-      padding: 16,
-      borderBottom: "1px solid #f1f5f9",
-      backgroundColor: "#fff"
-    }}>
+    <div
+      style={{
+        padding: 16,
+        borderBottom: "1px solid #f1f5f9",
+        backgroundColor: "#fff",
+      }}
+    >
       {/* Header */}
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: 12,
-        gap: 8
-      }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: 12,
+          gap: 8,
+        }}
+      >
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{
-            fontWeight: 600,
-            fontSize: 15,
-            color: "#1e293b",
-            marginBottom: 4
-          }}>
+          <div
+            style={{
+              fontWeight: 600,
+              fontSize: 15,
+              color: "#1e293b",
+              marginBottom: 4,
+            }}
+          >
             {student?.name ?? row.student_id}
           </div>
+
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <span style={{
-              background: "#f3f4f6",
-              padding: "2px 6px",
-              borderRadius: 4,
-              fontSize: 11,
-              color: "#374151",
-              fontWeight: 500
-            }}>
+            <span
+              style={{
+                background: "#f3f4f6",
+                padding: "2px 6px",
+                borderRadius: 4,
+                fontSize: 11,
+                color: "#374151",
+                fontWeight: 500,
+              }}
+            >
               {row.subject}
             </span>
+
             <Badge isFuture={isFuture} />
+
+            {/* Teacher */}
+            <span
+              style={{
+                fontSize: 11,
+                color: "#64748b",
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                padding: "2px 6px",
+                borderRadius: 999,
+              }}
+              title={row.teacher?.email ?? ""}
+            >
+              {row.teacher?.email ?? "—"}
+            </span>
           </div>
         </div>
       </div>
 
       {/* Content */}
       <div style={{ marginBottom: 12 }}>
-        <div style={{
-          fontSize: 13,
-          color: "#1e293b",
-          lineHeight: 1.4,
-          marginBottom: 4
-        }}>
+        <div
+          style={{
+            fontSize: 13,
+            color: "#1e293b",
+            lineHeight: 1.4,
+            marginBottom: 4,
+          }}
+        >
           {row.title || <span style={{ color: "#94a3b8" }}>No topic</span>}
         </div>
+
         {row.note && (
-          <div style={{
-            fontSize: 12,
-            color: "#64748b",
-            marginTop: 4,
-            padding: 8,
-            backgroundColor: "#f8fafc",
-            borderRadius: 6,
-            lineHeight: 1.4
-          }}>
+          <div
+            style={{
+              fontSize: 12,
+              color: "#64748b",
+              marginTop: 4,
+              padding: 8,
+              backgroundColor: "#f8fafc",
+              borderRadius: 6,
+              lineHeight: 1.4,
+            }}
+          >
             Note: {row.note}
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: 8
-      }}>
-        <div style={{
-          fontSize: 12,
-          color: "#64748b",
-          fontFamily: "monospace"
-        }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 12,
+            color: "#64748b",
+            fontFamily: "monospace",
+          }}
+        >
           {new Date(row.progress_date).toLocaleDateString()}
         </div>
+
         <div style={{ display: "flex", gap: 6 }}>
           <button
-            onClick={() => onEdit(row)}
+            onClick={() => canEdit && onEdit(row)}
+            disabled={!canEdit}
+            title={!canEdit ? "Only the creator can edit" : "Edit"}
             style={{
               padding: "6px 10px",
               borderRadius: 6,
-              cursor: "pointer",
+              cursor: canEdit ? "pointer" : "not-allowed",
               border: "1px solid #e2e8f0",
               background: "#fff",
               fontSize: 12,
               display: "flex",
               alignItems: "center",
               gap: 4,
-              color: "#2563eb",
-              WebkitTapHighlightColor: "transparent"
+              color: canEdit ? "#2563eb" : "#94a3b8",
+              opacity: canEdit ? 1 : 0.6,
+              WebkitTapHighlightColor: "transparent",
             }}
           >
             <Edit2 size={14} />
             <span>Edit</span>
           </button>
+
           <button
-            onClick={() => onDelete(row.id)}
+            onClick={() => canEdit && onDelete(row.id)}
+            disabled={!canEdit}
+            title={!canEdit ? "Only the creator can delete" : "Delete"}
             style={{
               padding: "6px",
               borderRadius: 6,
-              cursor: "pointer",
+              cursor: canEdit ? "pointer" : "not-allowed",
               border: "1px solid #fee2e2",
               background: "#fff5f5",
-              color: "#dc2626",
+              color: canEdit ? "#dc2626" : "#fca5a5",
               display: "flex",
               alignItems: "center",
-              WebkitTapHighlightColor: "transparent"
+              opacity: canEdit ? 1 : 0.6,
+              WebkitTapHighlightColor: "transparent",
             }}
           >
             <Trash2 size={14} />
@@ -195,7 +240,9 @@ function MobileProgressCard({
 
 export default function AdminLessonLog() {
   const { isMobile, isTablet, isDesktop } = useDeviceType();
-  
+
+  const [myUid, setMyUid] = useState<string>("");
+
   const [students, setStudents] = useState<Student[]>([]);
   const [rows, setRows] = useState<ProgressRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -243,6 +290,14 @@ export default function AdminLessonLog() {
   };
 
   const [form, setForm] = useState<FormState>(emptyForm);
+
+  // ✅ get current user id (for edit permission)
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      setMyUid(data.user?.id ?? "");
+    })();
+  }, []);
 
   const studentMap = useMemo(() => {
     const m = new Map<string, Student>();
@@ -327,9 +382,7 @@ export default function AdminLessonLog() {
 
     let targetStudent = students[0];
     if (qStudent) {
-      const found = students.find((s) =>
-        s.name.toLowerCase().includes(qStudent.toLowerCase())
-      );
+      const found = students.find((s) => s.name.toLowerCase().includes(qStudent.toLowerCase()));
       if (found) targetStudent = found;
     }
 
@@ -346,6 +399,12 @@ export default function AdminLessonLog() {
   };
 
   const onEdit = (row: ProgressRow) => {
+    // ✅ Guard: only creator can edit
+    if (!myUid || row.created_by !== myUid) {
+      setMsg("You can only edit records you created.");
+      return;
+    }
+
     setMode("edit");
     setEditingRow(row);
     setFormErr(null);
@@ -381,6 +440,12 @@ export default function AdminLessonLog() {
         });
       } else {
         if (!editingRow) throw new Error("No record selected.");
+
+        // ✅ Guard: only creator can update
+        if (!myUid || editingRow.created_by !== myUid) {
+          throw new Error("You can only update records you created.");
+        }
+
         const patch = {
           student_id: form.student_id,
           subject: form.subject.trim(),
@@ -389,6 +454,7 @@ export default function AdminLessonLog() {
           score: null,
           note: form.note.trim() || null,
         } satisfies ProgressUpdate;
+
         await updateProgress(editingRow.id, patch);
       }
 
@@ -403,7 +469,16 @@ export default function AdminLessonLog() {
   };
 
   const onDelete = async (id: string) => {
+    const row = rows.find((x) => x.id === id);
+
+    // ✅ Guard: only creator can delete
+    if (!row || !myUid || row.created_by !== myUid) {
+      setMsg("You can only delete records you created.");
+      return;
+    }
+
     if (!window.confirm("Delete this record?")) return;
+
     setMsg(null);
     try {
       await deleteProgress(id);
@@ -427,32 +502,33 @@ export default function AdminLessonLog() {
         maxWidth: 1400,
         margin: "0 auto",
         width: "100%",
-        boxSizing: "border-box"
+        boxSizing: "border-box",
       }}
     >
-      <div style={{
-        fontWeight: 800,
-        letterSpacing: 0.5,
-        fontSize: headerFontSize,
-        color: "#0f172a"
-      }}>
+      <div
+        style={{
+          fontWeight: 800,
+          letterSpacing: 0.5,
+          fontSize: headerFontSize,
+          color: "#0f172a",
+        }}
+      >
         STUDENT PROGRESS
       </div>
 
       {/* Filter Bar */}
-      <div style={{
-        border: "1px solid #e2e8f0",
-        borderRadius: cardBorderRadius,
-        padding: isMobile ? 12 : 16,
-        backgroundColor: "#fff"
-      }}>
-        <div style={{
-          fontWeight: 700,
-          marginBottom: 12,
-          fontSize: isMobile ? 13 : 14
-        }}>
+      <div
+        style={{
+          border: "1px solid #e2e8f0",
+          borderRadius: cardBorderRadius,
+          padding: isMobile ? 12 : 16,
+          backgroundColor: "#fff",
+        }}
+      >
+        <div style={{ fontWeight: 700, marginBottom: 12, fontSize: isMobile ? 13 : 14 }}>
           Filter Logs
         </div>
+
         <div
           style={{
             display: "grid",
@@ -471,9 +547,10 @@ export default function AdminLessonLog() {
               border: "1px solid #cbd5e1",
               fontSize: isMobile ? 13 : 14,
               outline: "none",
-              WebkitTapHighlightColor: "transparent"
+              WebkitTapHighlightColor: "transparent",
             }}
           />
+
           <input
             value={qSubject}
             onChange={(e) => setQSubject(e.target.value)}
@@ -484,9 +561,10 @@ export default function AdminLessonLog() {
               border: "1px solid #cbd5e1",
               fontSize: isMobile ? 13 : 14,
               outline: "none",
-              WebkitTapHighlightColor: "transparent"
+              WebkitTapHighlightColor: "transparent",
             }}
           />
+
           <button
             onClick={onReset}
             style={{
@@ -497,7 +575,7 @@ export default function AdminLessonLog() {
               background: "#fff",
               fontSize: isMobile ? 13 : 14,
               fontWeight: 500,
-              WebkitTapHighlightColor: "transparent"
+              WebkitTapHighlightColor: "transparent",
             }}
           >
             Reset
@@ -512,7 +590,7 @@ export default function AdminLessonLog() {
           justifyContent: "space-between",
           alignItems: "center",
           gap: 12,
-          flexWrap: "wrap"
+          flexWrap: "wrap",
         }}
       >
         <button
@@ -529,41 +607,45 @@ export default function AdminLessonLog() {
             display: "flex",
             alignItems: "center",
             gap: 6,
-            WebkitTapHighlightColor: "transparent"
+            WebkitTapHighlightColor: "transparent",
           }}
         >
           <Plus size={isMobile ? 16 : 18} />
           Record Lesson
         </button>
+
         {!isMobile && (
           <div style={{ fontSize: 12, color: "#64748b" }}>
-            Sorted by:{" "}
-            <b>{sortBy === "progress_date" ? "Lesson Date" : "Created Time"}</b>
+            Sorted by: <b>{sortBy === "progress_date" ? "Lesson Date" : "Created Time"}</b>
           </div>
         )}
       </div>
 
       {/* Error Message */}
       {msg && (
-        <div style={{
-          color: "#dc2626",
-          fontWeight: 600,
-          fontSize: isMobile ? 13 : 14,
-          padding: isMobile ? 10 : 12,
-          backgroundColor: "#fee2e2",
-          borderRadius: isMobile ? 6 : 8
-        }}>
+        <div
+          style={{
+            color: "#dc2626",
+            fontWeight: 600,
+            fontSize: isMobile ? 13 : 14,
+            padding: isMobile ? 10 : 12,
+            backgroundColor: "#fee2e2",
+            borderRadius: isMobile ? 6 : 8,
+          }}
+        >
           {msg}
         </div>
       )}
 
       {/* Table / Cards */}
-      <div style={{
-        border: "1px solid #e2e8f0",
-        borderRadius: cardBorderRadius,
-        overflow: "hidden",
-        backgroundColor: "#fff"
-      }}>
+      <div
+        style={{
+          border: "1px solid #e2e8f0",
+          borderRadius: cardBorderRadius,
+          overflow: "hidden",
+          backgroundColor: "#fff",
+        }}
+      >
         {/* Desktop Table Header */}
         {isDesktop && (
           <div
@@ -582,10 +664,7 @@ export default function AdminLessonLog() {
             <div>STUDENT</div>
             <div>SUBJECT</div>
             <div>TOPIC / CHAPTER</div>
-            <div
-              style={{ cursor: "pointer", userSelect: "none" }}
-              onClick={() => toggleSort("progress_date")}
-            >
+            <div style={{ cursor: "pointer", userSelect: "none" }} onClick={() => toggleSort("progress_date")}>
               DATE {sortBy === "progress_date" ? (sortDir === "desc" ? "▼" : "▲") : ""}
             </div>
             <div>TEACHER</div>
@@ -596,40 +675,47 @@ export default function AdminLessonLog() {
 
         {/* Content */}
         {loading ? (
-          <div style={{
-            padding: isMobile ? 30 : 40,
-            textAlign: "center",
-            color: "#94a3b8",
-            fontSize: isMobile ? 13 : 14
-          }}>
+          <div
+            style={{
+              padding: isMobile ? 30 : 40,
+              textAlign: "center",
+              color: "#94a3b8",
+              fontSize: isMobile ? 13 : 14,
+            }}
+          >
             Loading records...
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{
-            padding: isMobile ? 30 : 40,
-            textAlign: "center",
-            opacity: 0.75,
-            color: "#94a3b8",
-            fontSize: isMobile ? 13 : 14
-          }}>
+          <div
+            style={{
+              padding: isMobile ? 30 : 40,
+              textAlign: "center",
+              opacity: 0.75,
+              color: "#94a3b8",
+              fontSize: isMobile ? 13 : 14,
+            }}
+          >
             No lesson records found.
           </div>
         ) : isMobile || isTablet ? (
-          // Mobile/Tablet Cards
-          filtered.map((r) => (
-            <MobileProgressCard
-              key={r.id}
-              row={r}
-              student={studentMap.get(r.student_id)}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
-          ))
+          filtered.map((r) => {
+            const canEdit = !!myUid && r.created_by === myUid;
+            return (
+              <MobileProgressCard
+                key={r.id}
+                row={r}
+                student={studentMap.get(r.student_id)}
+                canEdit={canEdit}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
+            );
+          })
         ) : (
-          // Desktop Table Rows
           filtered.map((r) => {
             const stu = studentMap.get(r.student_id);
             const isFuture = new Date(r.progress_date).getTime() > new Date().getTime();
+            const canEdit = !!myUid && r.created_by === myUid;
 
             return (
               <div
@@ -644,9 +730,7 @@ export default function AdminLessonLog() {
                   background: "#fff",
                 }}
               >
-                <div style={{ fontWeight: 600, color: "#1e293b" }}>
-                  {stu?.name ?? r.student_id}
-                </div>
+                <div style={{ fontWeight: 600, color: "#1e293b" }}>{stu?.name ?? r.student_id}</div>
 
                 <div>
                   <span
@@ -664,20 +748,14 @@ export default function AdminLessonLog() {
 
                 <div style={{ color: "#1e293b", lineHeight: 1.4 }}>
                   {r.title || <span style={{ color: "#cbd5e1" }}>-</span>}
-                  {r.note && (
-                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-                      Note: {r.note}
-                    </div>
-                  )}
+                  {r.note && <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Note: {r.note}</div>}
                 </div>
 
                 <div style={{ fontFamily: "monospace", fontSize: 12, color: "#64748b" }}>
                   {new Date(r.progress_date).toISOString().slice(0, 10)}
                 </div>
 
-                <div style={{ fontSize: 12, color: "#64748b" }}>
-                  {r.teacher?.full_name?.split(" ")[0] ?? "Teacher"}
-                </div>
+                <div style={{ fontSize: 12, color: "#64748b" }}>{r.teacher?.email ?? "—"}</div>
 
                 <div>
                   <Badge isFuture={isFuture} />
@@ -685,36 +763,43 @@ export default function AdminLessonLog() {
 
                 <div style={{ display: "flex", gap: 6 }}>
                   <button
-                    onClick={() => onEdit(r)}
+                    onClick={() => canEdit && onEdit(r)}
+                    disabled={!canEdit}
+                    title={!canEdit ? "Only the creator can edit" : "Edit"}
                     style={{
                       padding: "4px 8px",
                       borderRadius: 6,
-                      cursor: "pointer",
+                      cursor: canEdit ? "pointer" : "not-allowed",
                       border: "1px solid #cbd5e1",
                       background: "#fff",
                       fontSize: 11,
-                      color: "#2563eb",
+                      color: canEdit ? "#2563eb" : "#94a3b8",
                       display: "flex",
                       alignItems: "center",
-                      gap: 4
+                      gap: 4,
+                      opacity: canEdit ? 1 : 0.6,
                     }}
                   >
                     <Edit2 size={12} />
                     Edit
                   </button>
+
                   <button
-                    onClick={() => onDelete(r.id)}
+                    onClick={() => canEdit && onDelete(r.id)}
+                    disabled={!canEdit}
+                    title={!canEdit ? "Only the creator can delete" : "Delete"}
                     style={{
                       padding: "4px 8px",
                       borderRadius: 6,
-                      cursor: "pointer",
+                      cursor: canEdit ? "pointer" : "not-allowed",
                       border: "1px solid #fee2e2",
                       background: "#fff5f5",
-                      color: "#dc2626",
+                      color: canEdit ? "#dc2626" : "#fca5a5",
                       fontSize: 11,
                       display: "flex",
                       alignItems: "center",
-                      gap: 4
+                      gap: 4,
+                      opacity: canEdit ? 1 : 0.6,
                     }}
                   >
                     <Trash2 size={12} />
@@ -752,7 +837,7 @@ export default function AdminLessonLog() {
               overflow: "hidden",
               maxHeight: isMobile ? "90vh" : "none",
               display: "flex",
-              flexDirection: "column"
+              flexDirection: "column",
             }}
           >
             {/* Header */}
@@ -763,16 +848,13 @@ export default function AdminLessonLog() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                flexShrink: 0
+                flexShrink: 0,
               }}
             >
-              <div style={{
-                fontWeight: 800,
-                fontSize: isMobile ? 15 : 16,
-                color: "#0f172a"
-              }}>
+              <div style={{ fontWeight: 800, fontSize: isMobile ? 15 : 16, color: "#0f172a" }}>
                 {mode === "create" ? "Log Lesson" : "Edit Lesson"}
               </div>
+
               <button
                 disabled={saving}
                 onClick={closeModal}
@@ -784,7 +866,7 @@ export default function AdminLessonLog() {
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
-                  WebkitTapHighlightColor: "transparent"
+                  WebkitTapHighlightColor: "transparent",
                 }}
               >
                 <X size={isMobile ? 16 : 18} />
@@ -792,42 +874,25 @@ export default function AdminLessonLog() {
             </div>
 
             {/* Body */}
-            <div style={{
-              padding: isMobile ? 12 : 16,
-              display: "grid",
-              gap: isMobile ? 10 : 12,
-              overflowY: "auto",
-              flex: 1
-            }}>
+            <div style={{ padding: isMobile ? 12 : 16, display: "grid", gap: isMobile ? 10 : 12, overflowY: "auto", flex: 1 }}>
               {/* Student */}
               <div style={{ display: "grid", gap: 8 }}>
-                <div style={{
-                  fontSize: isMobile ? 11 : 12,
-                  fontWeight: 700,
-                  color: "#64748b"
-                }}>
-                  Student
-                </div>
+                <div style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#64748b" }}>Student</div>
+
                 <select
                   value={form.student_id}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, student_id: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, student_id: e.target.value }))}
                   style={{
                     padding: isMobile ? 8 : 10,
                     borderRadius: isMobile ? 8 : 10,
                     border: "1px solid #cbd5e1",
                     fontSize: isMobile ? 13 : 14,
                     outline: "none",
-                    WebkitTapHighlightColor: "transparent"
+                    WebkitTapHighlightColor: "transparent",
                   }}
                 >
                   {students
-                    .filter((s) =>
-                      s.name
-                        .toLowerCase()
-                        .includes(studentSearch.trim().toLowerCase())
-                    )
+                    .filter((s) => s.name.toLowerCase().includes(studentSearch.trim().toLowerCase()))
                     .map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name}
@@ -836,27 +901,13 @@ export default function AdminLessonLog() {
                 </select>
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-                  gap: isMobile ? 10 : 12,
-                }}
-              >
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 10 : 12 }}>
                 {/* Subject */}
                 <div style={{ display: "grid", gap: 8 }}>
-                  <div style={{
-                    fontSize: isMobile ? 11 : 12,
-                    fontWeight: 700,
-                    color: "#64748b"
-                  }}>
-                    Subject
-                  </div>
+                  <div style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#64748b" }}>Subject</div>
                   <input
                     value={form.subject}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, subject: e.target.value }))
-                    }
+                    onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
                     placeholder="e.g. Math / BM"
                     style={{
                       padding: isMobile ? 8 : 10,
@@ -864,33 +915,25 @@ export default function AdminLessonLog() {
                       border: "1px solid #cbd5e1",
                       fontSize: isMobile ? 13 : 14,
                       outline: "none",
-                      WebkitTapHighlightColor: "transparent"
+                      WebkitTapHighlightColor: "transparent",
                     }}
                   />
                 </div>
 
                 {/* Date */}
                 <div style={{ display: "grid", gap: 8 }}>
-                  <div style={{
-                    fontSize: isMobile ? 11 : 12,
-                    fontWeight: 700,
-                    color: "#64748b"
-                  }}>
-                    Date
-                  </div>
+                  <div style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#64748b" }}>Date</div>
                   <input
                     type="date"
                     value={form.progress_date}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, progress_date: e.target.value }))
-                    }
+                    onChange={(e) => setForm((f) => ({ ...f, progress_date: e.target.value }))}
                     style={{
                       padding: isMobile ? 8 : 10,
                       borderRadius: isMobile ? 8 : 10,
                       border: "1px solid #cbd5e1",
                       fontSize: isMobile ? 13 : 14,
                       outline: "none",
-                      WebkitTapHighlightColor: "transparent"
+                      WebkitTapHighlightColor: "transparent",
                     }}
                   />
                 </div>
@@ -898,18 +941,10 @@ export default function AdminLessonLog() {
 
               {/* Topic */}
               <div style={{ display: "grid", gap: 8 }}>
-                <div style={{
-                  fontSize: isMobile ? 11 : 12,
-                  fontWeight: 700,
-                  color: "#64748b"
-                }}>
-                  Topic / Chapter
-                </div>
+                <div style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#64748b" }}>Topic / Chapter</div>
                 <input
                   value={form.title}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, title: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   placeholder="e.g. Bab 1.1"
                   style={{
                     padding: isMobile ? 8 : 10,
@@ -917,25 +952,17 @@ export default function AdminLessonLog() {
                     border: "1px solid #cbd5e1",
                     fontSize: isMobile ? 13 : 14,
                     outline: "none",
-                    WebkitTapHighlightColor: "transparent"
+                    WebkitTapHighlightColor: "transparent",
                   }}
                 />
               </div>
 
               {/* Note */}
               <div style={{ display: "grid", gap: 8 }}>
-                <div style={{
-                  fontSize: isMobile ? 11 : 12,
-                  fontWeight: 700,
-                  color: "#64748b"
-                }}>
-                  Note (optional)
-                </div>
+                <div style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#64748b" }}>Note (optional)</div>
                 <textarea
                   value={form.note}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, note: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
                   placeholder="Homework / remark..."
                   rows={isMobile ? 2 : 3}
                   style={{
@@ -946,20 +973,22 @@ export default function AdminLessonLog() {
                     fontSize: isMobile ? 13 : 14,
                     fontFamily: "inherit",
                     outline: "none",
-                    WebkitTapHighlightColor: "transparent"
+                    WebkitTapHighlightColor: "transparent",
                   }}
                 />
               </div>
 
               {formErr && (
-                <div style={{
-                  color: "#dc2626",
-                  fontWeight: 600,
-                  fontSize: isMobile ? 12 : 13,
-                  padding: isMobile ? 8 : 10,
-                  backgroundColor: "#fee2e2",
-                  borderRadius: isMobile ? 6 : 8
-                }}>
+                <div
+                  style={{
+                    color: "#dc2626",
+                    fontWeight: 600,
+                    fontSize: isMobile ? 12 : 13,
+                    padding: isMobile ? 8 : 10,
+                    backgroundColor: "#fee2e2",
+                    borderRadius: isMobile ? 6 : 8,
+                  }}
+                >
                   {formErr}
                 </div>
               )}
@@ -973,7 +1002,7 @@ export default function AdminLessonLog() {
                 display: "flex",
                 justifyContent: "flex-end",
                 gap: 10,
-                flexShrink: 0
+                flexShrink: 0,
               }}
             >
               <button
@@ -986,7 +1015,7 @@ export default function AdminLessonLog() {
                   border: "1px solid #cbd5e1",
                   background: "#fff",
                   fontSize: isMobile ? 13 : 14,
-                  WebkitTapHighlightColor: "transparent"
+                  WebkitTapHighlightColor: "transparent",
                 }}
               >
                 Cancel
@@ -1005,7 +1034,7 @@ export default function AdminLessonLog() {
                   fontWeight: 700,
                   fontSize: isMobile ? 13 : 14,
                   opacity: saving ? 0.7 : 1,
-                  WebkitTapHighlightColor: "transparent"
+                  WebkitTapHighlightColor: "transparent",
                 }}
               >
                 {saving ? "Saving..." : mode === "create" ? "Save" : "Update"}
