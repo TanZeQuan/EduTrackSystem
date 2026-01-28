@@ -273,7 +273,7 @@ export default function AdminDashboard() {
         <DashboardCard
           to="/admin/progress"
           title="Progress"
-          desc="Track academic scores and comments."
+          desc="Record all student progress."
           icon={<IconChart />}
           isMobile={isMobile}
         />
@@ -295,7 +295,7 @@ export default function AdminDashboard() {
             { step: 1, text: "Create Students", sub: "Assign to parents" },
             { step: 2, text: "Mark Attendance", sub: "Daily routine" },
             { step: 3, text: "Send Feedback", sub: "Weekly updates" },
-            { step: 4, text: "Update Progress", sub: "Exam results" },
+            { step: 4, text: "Update Progress", sub: "Student Progress" },
           ].map((item) => (
             <div
               key={item.step}

@@ -384,7 +384,7 @@ export default function AdminStudents() {
           <input
             value={grade}
             onChange={(e) => setGrade(e.target.value)}
-            placeholder="Grade (e.g. 5A)"
+            placeholder="Grade / Class (e.g. 5A)"
             style={{ 
               flex: 1,
               padding: inputPadding,
