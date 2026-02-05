@@ -84,7 +84,7 @@ export default function ParentDashboard() {
   return (
     <div style={{
       width: "100%",
-      maxWidth: "100vw",
+      maxWidth: "1200px", // Added a max-width for better desktop look
       boxSizing: "border-box",
       padding: containerPadding,
       margin: "0 auto",
@@ -96,29 +96,60 @@ export default function ParentDashboard() {
       <header style={{
         display: "flex",
         flexDirection: "column",
-        marginBottom: isMobile ? 20 : 24,
+        marginBottom: isMobile ? 16 : 20,
         gap: 8,
       }}>
-        <div>
-          <h2 style={{
-            fontSize: headerFontSize,
-            fontWeight: 700,
-            color: "#0f172a",
-            margin: 0,
-            lineHeight: 1.2
-          }}>
-            Dashboard
-          </h2>
-          <p style={{
-            margin: "4px 0 0",
-            fontSize: isMobile ? 13 : 14,
-            color: "#64748b",
-            lineHeight: 1.5
-          }}>
-            Overview of your children's progress
-          </p>
-        </div>
+        <h2 style={{
+          fontSize: headerFontSize,
+          fontWeight: 700,
+          color: "#0f172a",
+          margin: 0,
+          lineHeight: 1.2
+        }}>
+          Dashboard
+        </h2>
+        <p style={{
+          margin: 0,
+          fontSize: isMobile ? 13 : 14,
+          color: "#64748b",
+        }}>
+          Overview of your children's progress
+        </p>
       </header>
+
+      {/* NEW: Guideline Section */}
+      <div style={{
+        backgroundColor: "#f0f9ff",
+        border: "1px solid #bae6fd",
+        borderRadius: isMobile ? 10 : 12,
+        padding: isMobile ? "12px" : "16px",
+        marginBottom: isMobile ? 20 : 28,
+        display: "flex",
+        flexDirection: isMobile ? "column" : "row",
+        alignItems: isMobile ? "flex-start" : "center",
+        gap: 12,
+      }}>
+        <div style={{
+          backgroundColor: "#3b82f6",
+          color: "#fff",
+          width: 24,
+          height: 24,
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 12,
+          fontWeight: "bold",
+          flexShrink: 0
+        }}>i</div>
+        <div style={{ fontSize: isMobile ? 12 : 13, color: "#0369a1", lineHeight: 1.5 }}>
+          <strong>Quick Tip:</strong> Click on a student card below to view their 
+          <span style={{ color: "#0c4a6e", fontWeight: 600 }}> Academic Attendance</span>, 
+          <span style={{ color: "#0c4a6e", fontWeight: 600 }}> Progress Reports</span>, 
+          <span style={{ color: "#0c4a6e", fontWeight: 600 }}> Teacher Feedback</span>, and 
+          <span style={{ color: "#0c4a6e", fontWeight: 600 }}> Course Materials</span>.
+        </div>
+      </div>
 
       {/* Error Message */}
       {msg && (
@@ -127,7 +158,7 @@ export default function ParentDashboard() {
           backgroundColor: "#fef2f2",
           color: "#b91c1c",
           borderRadius: isMobile ? 6 : 8,
-          marginBottom: isMobile ? 16 : 24,
+          marginBottom: 16,
           fontSize: isMobile ? 13 : 14
         }}>
           {msg}
@@ -140,51 +171,41 @@ export default function ParentDashboard() {
           display: "grid",
           gridTemplateColumns: isMobile 
             ? "1fr" 
-            : isTablet 
-              ? "repeat(auto-fill, minmax(280px, 1fr))" 
-              : "repeat(auto-fill, minmax(300px, 1fr))",
+            : "repeat(auto-fill, minmax(300px, 1fr))",
           gap: isMobile ? 16 : 24,
         }}>
           {[1, 2].map((i) => (
-            <div 
-              key={i} 
-              style={{
-                height: isMobile ? 120 : 140,
-                backgroundColor: "#f8fafc",
-                borderRadius: isMobile ? 10 : 16,
-                animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-              }} 
-            />
+            <div key={i} className="skeleton-card" style={{
+              height: 140,
+              backgroundColor: "#f8fafc",
+              borderRadius: cardBorderRadius,
+            }} />
           ))}
         </div>
       ) : cards.length === 0 ? (
         <div style={{
           textAlign: "center",
-          padding: isMobile ? 40 : 60,
+          padding: 60,
           color: "#94a3b8",
           backgroundColor: "#f8fafc",
-          borderRadius: isMobile ? 12 : 16,
-          fontSize: isMobile ? 13 : 14
+          borderRadius: 16,
         }}>
-          <p style={{ margin: 0 }}>No students linked to your account.</p>
+          <p>No students linked to your account.</p>
         </div>
       ) : (
         <div style={{
           display: "grid",
           gridTemplateColumns: isMobile 
             ? "1fr" 
-            : isTablet 
-              ? "repeat(auto-fill, minmax(280px, 1fr))" 
-              : "repeat(auto-fill, minmax(300px, 1fr))",
+            : "repeat(auto-fill, minmax(300px, 1fr))",
           gap: isMobile ? 16 : 24,
         }}>
           {cards.map((c) => (
             <Link
               key={c.student.id}
               to={`/parent/students/${c.student.id}`}
+              className="student-card"
               style={{
-                width: "100%",
-                boxSizing: "border-box",
                 backgroundColor: "#fff",
                 border: "1px solid #e2e8f0",
                 borderRadius: cardBorderRadius,
@@ -193,62 +214,38 @@ export default function ParentDashboard() {
                 textDecoration: "none",
                 color: "inherit",
                 display: "block",
-                transition: "all 0.2s ease-in-out",
+                transition: "all 0.2s ease",
                 WebkitTapHighlightColor: "transparent",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-4px)";
-                e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.1)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
-              }}
-              onTouchStart={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 6px 12px -2px rgba(0, 0, 0, 0.08)";
-              }}
-              onTouchEnd={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
               }}
             >
               <div style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "flex-start",
-                marginBottom: isMobile ? 12 : 16,
-                gap: isMobile ? 10 : 12,
-                flexWrap: isMobile ? "wrap" : "nowrap"
+                marginBottom: 16,
+                gap: 12
               }}>
-                <div style={{
-                  display: "flex",
-                  gap: isMobile ? 12 : 16,
-                  minWidth: 0,
-                  flex: 1
-                }}>
-                  {/* Avatar */}
+                <div style={{ display: "flex", gap: 16, minWidth: 0, flex: 1 }}>
                   <div style={{
                     width: avatarSize,
                     height: avatarSize,
-                    borderRadius: "50%",
-                    backgroundColor: "#f1f5f9",
+                    borderRadius: "12px", // Square-ish rounded looks more modern
+                    backgroundColor: "#eff6ff",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontSize: isMobile ? 16 : 20,
-                    fontWeight: 600,
-                    color: "#64748b",
+                    fontWeight: 700,
+                    color: "#3b82f6",
                     flexShrink: 0,
                   }}>
                     {getInitials(c.student.name)}
                   </div>
 
-                  {/* Student Info */}
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{
                       fontSize: nameFontSize,
-                      fontWeight: 600,
+                      fontWeight: 700,
                       color: "#1e293b",
                       marginBottom: 4,
                       whiteSpace: "nowrap",
@@ -257,67 +254,52 @@ export default function ParentDashboard() {
                     }}>
                       {c.student.name}
                     </div>
-                    <div style={{
-                      fontSize: gradeFontSize,
-                      color: "#64748b",
-                    }}>
-                      {c.student.grade ? `${c.student.grade}` : "No Grade"}
+                    <div style={{ fontSize: gradeFontSize, color: "#64748b" }}>
+                      Grade: {c.student.grade || "N/A"}
                     </div>
                   </div>
                 </div>
 
-                {/* Badge */}
                 <div style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  padding: isMobile ? "3px 8px" : "4px 10px",
-                  borderRadius: 999,
-                  fontSize: isMobile ? 11 : 12,
-                  fontWeight: 600,
-                  backgroundColor: c.unread > 0 ? "#fef2f2" : "#f8fafc",
-                  color: c.unread > 0 ? "#ef4444" : "#94a3b8",
-                  border: `1px solid ${c.unread > 0 ? "#fecaca" : "#e2e8f0"}`,
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  backgroundColor: c.unread > 0 ? "#ef4444" : "#10b981",
+                  color: "#fff",
+                  textTransform: "uppercase"
                 }}>
-                  {c.unread > 0 ? "●" : "✓"}
-                  <span style={{ marginLeft: isMobile ? 4 : 6 }}>
-                    {c.unread > 0 ? `${c.unread} New` : "All caught up"}
-                  </span>
+                 {c.unread > 0 ? `${c.unread} New` : "Up to date"}
                 </div>
               </div>
 
-              {/* Action */}
               <div style={{
                 borderTop: "1px solid #f1f5f9",
-                paddingTop: isMobile ? 12 : 16,
-                marginTop: isMobile ? 8 : 8
+                paddingTop: 12,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center"
               }}>
-                <div style={{
-                  fontSize: isMobile ? 12 : 13,
-                  color: "#2563eb",
-                  fontWeight: 500,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                }}>
-                  View Details <span>→</span>
-                </div>
+                <span style={{ fontSize: 12, color: "#94a3b8" }}>View Full Profile</span>
+                <span style={{ color: "#3b82f6", fontWeight: "bold" }}>→</span>
               </div>
             </Link>
           ))}
         </div>
       )}
 
-      {/* CSS Animation */}
       <style>{`
+        .student-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1) !important;
+          border-color: #3b82f6 !important;
+        }
+        .skeleton-card {
+          animation: pulse 2s infinite;
+        }
         @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.5;
-          }
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
         }
       `}</style>
     </div>
