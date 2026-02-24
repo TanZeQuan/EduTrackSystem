@@ -229,7 +229,7 @@ export default function ParentDashboard() {
                   <div style={{
                     width: avatarSize,
                     height: avatarSize,
-                    borderRadius: "12px", // Square-ish rounded looks more modern
+                    borderRadius: "12px", 
                     backgroundColor: "#eff6ff",
                     display: "flex",
                     alignItems: "center",
