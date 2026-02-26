@@ -291,6 +291,10 @@ export default function LoginPage() {
         }
     };
 
+    const handleForgotPassword = () => {
+        nav("/forgot-password");
+    };
+
     const toggleMode = () => {
         setMsg(null);
         setMode((m) => (m === "login" ? "signup" : "login"));
@@ -438,6 +442,25 @@ export default function LoginPage() {
                                 ? "Use your email & password to sign in."
                                 : "Tip: After register verify your email to continue."}
                         </p>
+
+                        {mode === "login" && (
+                            <button
+                                type="button"
+                                onClick={handleForgotPassword}
+                                style={{
+                                    background: "transparent",
+                                    border: "none",
+                                    padding: 0,
+                                    fontSize: 12,
+                                    color: t.link,
+                                    cursor: "pointer",
+                                    textDecoration: "underline",
+                                    textUnderlineOffset: 4,
+                                }}
+                            >
+                                Forgot password?
+                            </button>
+                        )}
                     </div>
 
                     <button

@@ -2,6 +2,8 @@ import  { lazy, Suspense } from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import RequireAuth from "./auth/RequireAuth";
 import { useAuth } from "./auth/authContext";
+import ResetPassword from "./pages/ResetPassword";
+import ForgotPassword from "./pages/ForgotPassword";
 
 // ✅ Lazy pages
 const LoginPage = lazy(() => import("./pages/login/LoginPage"));
@@ -33,6 +35,8 @@ export default function App() {
     <Suspense fallback={<div style={{ padding: 24 }}>Loading...</div>}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/" element={<RoleHome />} />
 
