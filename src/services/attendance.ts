@@ -5,7 +5,7 @@ export type AttendanceStatus = "present" | "absent" | "late";
 export type AttendanceRow = {
   id: string;
   student_id: string;
-  date: string; // YYYY-MM-DD
+  date: string; 
   status: AttendanceStatus;
   note: string | null;
   marked_by: string | null;
@@ -23,7 +23,7 @@ export async function listAttendanceByDate(date: string) {
 
 export async function upsertAttendance(input: {
   student_id: string;
-  date: string; // YYYY-MM-DD
+  date: string; 
   status: AttendanceStatus;
   note?: string | null;
 }) {

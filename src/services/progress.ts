@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 
 export type ProgressRow = {
+  updated_at: string;
   id: string;
   student_id: string;
   subject: string;

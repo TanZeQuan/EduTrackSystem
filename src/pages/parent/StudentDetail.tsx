@@ -4,7 +4,9 @@ import { listStudents, type Student } from "../../services/student";
 import { listAttendanceByStudent, type AttendanceRow } from "../../services/attendance";
 import { listFeedback, type FeedbackRow, markFeedbackRead } from "../../services/feedback";
 import { listProgressByStudent, type ProgressRow } from "../../services/progress";
-import { ChevronLeft, Calendar, MessageSquare, TrendingUp } from "lucide-react";
+// Added these two imports
+import { listMaterialsByStudent, getMaterialSignedUrl, type MaterialRow } from "../../services/materials";
+import { ChevronLeft, Calendar, MessageSquare, TrendingUp, FileText, Download, Loader2 } from "lucide-react";
 
 // --- Hooks: Device Detection ---
 function useDeviceType() {
@@ -61,6 +63,9 @@ export default function ParentStudentDetail() {
   const [attendance, setAttendance] = useState<AttendanceRow[]>([]);
   const [feedback, setFeedback] = useState<FeedbackRow[]>([]);
   const [progress, setProgress] = useState<ProgressRow[]>([]);
+  // Added materials state
+  const [materials, setMaterials] = useState<MaterialRow[]>([]);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState<string | null>(null);
@@ -88,18 +93,21 @@ export default function ParentStudentDetail() {
           listAttendanceByStudent(studentId),
           listFeedback(studentId),
           listProgressByStudent(studentId),
+          listMaterialsByStudent(studentId), // Added this
         ]);
 
         if (!alive) return;
 
-        const [resA, resF, resP] = results;
+        const [resA, resF, resP, resM] = results;
 
         const a = resA.status === "fulfilled" ? resA.value : [];
         const f = resF.status === "fulfilled" ? resF.value : [];
         const pr = resP.status === "fulfilled" ? resP.value : [];
+        const m = resM.status === "fulfilled" ? resM.value : []; // Added this
 
         setAttendance(a);
         setProgress(pr);
+        setMaterials(m); // Added this
 
         // Auto-mark unread feedback
         const unread = f.filter((x) => !x.is_read);
@@ -127,6 +135,20 @@ export default function ParentStudentDetail() {
 
   const markFeedbackReadItems = async (items: FeedbackRow[]) => {
     await Promise.allSettled(items.map((x) => markFeedbackRead(x.id)));
+  };
+
+  // Added download handler
+  const handleDownload = async (m: MaterialRow) => {
+    if (downloadingId) return;
+    setDownloadingId(m.id);
+    try {
+      const url = await getMaterialSignedUrl(m.file_path);
+      window.open(url, "_blank");
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   // Responsive styling
@@ -244,19 +266,6 @@ export default function ParentStudentDetail() {
             </span>
           </div>
         </div>
-        
-        {msg && (
-          <div style={{
-            marginTop: isMobile ? 12 : 16,
-            color: "#dc2626",
-            fontSize: isMobile ? 12 : 14,
-            padding: isMobile ? 10 : 12,
-            backgroundColor: "#fee2e2",
-            borderRadius: isMobile ? 6 : 8
-          }}>
-            {msg}
-          </div>
-        )}
       </div>
 
       {/* Grid Dashboard */}
@@ -605,7 +614,89 @@ export default function ParentStudentDetail() {
             )}
           </div>
         </div>
+
+        {/* 4. Materials Card (Added) */}
+        <div style={{
+          backgroundColor: "#fff",
+          border: "1px solid #e2e8f0",
+          borderRadius: cardBorderRadius,
+          overflow: "hidden",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+          display: "flex",
+          flexDirection: "column",
+          maxHeight: isMobile ? 400 : 500,
+        }}>
+          <div style={{
+            padding: cardHeaderPadding,
+            borderBottom: "1px solid #f1f5f9",
+            backgroundColor: "#f8fafc",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+            flexShrink: 0
+          }}>
+            <FileText size={iconSize} style={{ color: "#3b82f6" }} />
+            <h3 style={{
+              margin: 0,
+              fontSize: isMobile ? 14 : 16,
+              fontWeight: 600,
+              color: "#1e293b",
+            }}>
+              Courses Materials
+            </h3>
+          </div>
+          
+          <div style={{ padding: 0, overflowY: "auto", flex: 1 }}>
+            {materials.length === 0 ? (
+              <div style={{ padding: isMobile ? 24 : 32, textAlign: "center", color: "#94a3b8", fontSize: isMobile ? 12 : 14 }}>
+                No materials shared yet.
+              </div>
+            ) : (
+              <div>
+                {materials.map((m) => (
+                  <div 
+                    key={m.id}
+                    onClick={() => handleDownload(m)}
+                    style={{
+                      padding: isMobile ? "12px 16px" : "14px 20px",
+                      borderBottom: "1px solid #f1f5f9",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      cursor: "pointer",
+                      WebkitTapHighlightColor: "transparent"
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                      <FileText size={iconSize} style={{ color: "#3b82f6", flexShrink: 0 }} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, color: "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {m.title}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#94a3b8" }}>
+                          {new Date(m.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ color: "#94a3b8" }}>
+                      {downloadingId === m.id ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
+
+      <style>{`
+        .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }
